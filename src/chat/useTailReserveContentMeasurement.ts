@@ -1,12 +1,12 @@
-import { useLayoutEffect, type MutableRefObject } from 'react'
+import { useLayoutEffect, type RefObject } from 'react'
 import type { ChatItemKey } from './ChatVirtualViewport.types'
 
 type UseTailReserveContentMeasurementArgs = {
   activeReservedTailKey: ChatItemKey | null
-  measuredTailReserveKeyRef: MutableRefObject<ChatItemKey | null>
+  measuredTailReserveKeyRef: RefObject<ChatItemKey | null>
   scheduleStateEmit: () => void
   tailReserveContentElement: HTMLDivElement | null
-  tailReserveContentSizeRef: MutableRefObject<number>
+  tailReserveContentSizeRef: RefObject<number>
   tailReserveMinHeight: number
 }
 
