@@ -8,6 +8,7 @@ import {
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
+  InsetOverlays,
   MessageView,
   Metrics,
   mountPage,
@@ -89,6 +90,7 @@ function PrependExample() {
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 10 }}
         />
+        <InsetOverlays />
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>

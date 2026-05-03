@@ -456,6 +456,37 @@ export function SiteHeader({ activeId }: { activeId?: string }) {
   )
 }
 
+export function InsetOverlays({
+  headInset,
+  labeled = false,
+  tailInset,
+}: {
+  headInset?: number
+  labeled?: boolean
+  tailInset?: number
+}) {
+  return (
+    <>
+      <ThreadPort.Overlay className="insetHeadDock" placement="head">
+        {labeled && headInset !== undefined && (
+          <div className="insetBand">
+            <code className="insetName">headInset</code>
+            <code className="insetValue">{headInset}px</code>
+          </div>
+        )}
+      </ThreadPort.Overlay>
+      <ThreadPort.Overlay className="insetTailDock" placement="tail">
+        {labeled && tailInset !== undefined && (
+          <div className="insetBand">
+            <code className="insetName">tailInset</code>
+            <code className="insetValue">{tailInset}px</code>
+          </div>
+        )}
+      </ThreadPort.Overlay>
+    </>
+  )
+}
+
 export function Metrics({ state }: { state: ThreadPort.ViewportState | null }) {
   return (
     <dl className="metricList">

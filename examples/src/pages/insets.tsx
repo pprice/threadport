@@ -7,6 +7,7 @@ import {
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
+  InsetOverlays,
   MessageView,
   Metrics,
   mountPage,
@@ -67,17 +68,8 @@ function InsetsExample() {
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 8 }}
         />
-        <ThreadPort.Overlay className="insetHeadDock" placement="head">
-          <div className="insetBand">
-            <span>headInset</span>
-            <code>{headInset}px</code>
-          </div>
-        </ThreadPort.Overlay>
-        <ThreadPort.Overlay className="insetTailDock" placement="tail">
-          <div className="insetBand">
-            <span>tailInset</span>
-            <code>{tailInset}px</code>
-          </div>
+        <InsetOverlays headInset={headInset} labeled tailInset={tailInset} />
+        <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
       </ThreadPort.Root>

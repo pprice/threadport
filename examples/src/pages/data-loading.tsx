@@ -8,6 +8,7 @@ import {
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
+  InsetOverlays,
   MessageView,
   Metrics,
   mountPage,
@@ -137,6 +138,7 @@ function DataLoadingExample() {
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 10 }}
         />
+        <InsetOverlays />
         <ThreadPort.Overlay className="dataLoadingDock" placement="head">
           {loading && <div className="loadingChip">Loading older messages</div>}
         </ThreadPort.Overlay>

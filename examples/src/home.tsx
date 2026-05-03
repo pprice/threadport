@@ -5,6 +5,7 @@ import {
   estimateMessageSize,
   examples,
   getMessageKey,
+  InsetOverlays,
   MessageView,
   mountPage,
   SiteHeader,
@@ -179,6 +180,7 @@ function Home() {
                 tailReserve={{ className: 'tailReserve previewTailReserve' }}
                 virtualizerOptions={{ overscan: 4 }}
               />
+              <InsetOverlays />
               <ThreadPort.Overlay
                 className="previewComposerDock"
                 placement="tail"
