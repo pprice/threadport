@@ -1,7 +1,9 @@
 # Threadport
 
-Headless virtualized chat viewport primitives for React. Threadport owns scroll
-mechanics; your app owns messages, composer, buttons, styling, and layout.
+Headless virtualized chat viewport primitives for React, built on TanStack
+Virtual. Threadport is intended to mimic the scroll behavior of ChatGPT and
+Claude-style applications while your app owns messages, composer, buttons,
+styling, and layout.
 
 ## Install
 
