@@ -1,0 +1,63 @@
+{
+  "name": "threadport",
+  "version": "0.1.0",
+  "description": "Headless virtualized chat viewport primitives for React.",
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "chat",
+    "viewport",
+    "virtualized",
+    "headless",
+    "react",
+    "scroll"
+  ],
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run typecheck && npm run build:lib && npm run build:playground",
+    "build:lib": "tsup",
+    "build:playground": "vite build --outDir dist-playground",
+    "pack:dry": "npm pack --dry-run",
+    "prepublishOnly": "npm run build && node tests/package-smoke.mjs && npm run test:e2e",
+    "preview": "vite preview --outDir dist-playground",
+    "test": "npm run typecheck && npm run test:package && npm run test:e2e",
+    "test:e2e": "playwright test",
+    "test:package": "npm run build:lib && node tests/package-smoke.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.13.24"
+  },
+  "peerDependencies": {
+    "react": ">=18.3 || >=19"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tsup": "^8.5.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
