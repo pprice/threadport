@@ -44,6 +44,7 @@ import type {
 } from './types'
 
 type AnchorSnapshot = {
+  elementTop: number | null
   itemKey: ItemKey
   scrollDelta: number
 }
@@ -226,9 +227,13 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       return
     }
 
+    const virtualItems = virtualizer.getVirtualItems()
     const anchorItem =
+      virtualItems.find(
+        (virtualItem) => virtualItem.end >= element.scrollTop,
+      ) ??
       virtualizer.getVirtualItemForOffset(element.scrollTop) ??
-      virtualizer.getVirtualItems()[0]
+      virtualItems[0]
 
     if (!anchorItem) {
       return
@@ -241,9 +246,38 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     }
 
     anchorRef.current = {
+      elementTop:
+        element
+          .querySelector<HTMLElement>(`[data-index="${anchorItem.index}"]`)
+          ?.getBoundingClientRect().top ?? null,
       itemKey: getItemKey(item, anchorItem.index),
       scrollDelta: element.scrollTop - anchorItem.start,
     }
+  }
+
+  function restoreAnchorElementTop(index: number, anchor: AnchorSnapshot) {
+    const element = scrollRef.current
+
+    if (!element || anchor.elementTop === null) {
+      return false
+    }
+
+    const anchorElement = element.querySelector<HTMLElement>(
+      `[data-index="${index}"]`,
+    )
+    const nextTop = anchorElement?.getBoundingClientRect().top
+
+    if (nextTop === undefined) {
+      return false
+    }
+
+    const delta = nextTop - anchor.elementTop
+
+    if (Math.abs(delta) >= 0.5) {
+      element.scrollTop += delta
+    }
+
+    return true
   }
 
   function scrollToTarget(
@@ -338,7 +372,10 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     getScrollElement: () => scrollRef.current,
     gap: virtualizerGap,
     onChange: () => {
-      captureAnchor()
+      if (previousCountRef.current === items.length) {
+        captureAnchor()
+      }
+
       scheduleStateEmit()
       scheduleSettledStateEmit()
     },
@@ -447,13 +484,26 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
       if (anchor && element) {
         const anchorIndex = keyToIndex.get(anchor.itemKey)
-        const offset =
-          anchorIndex === undefined
-            ? undefined
-            : virtualizer.getOffsetForIndex(anchorIndex, 'start')?.[0]
 
-        if (offset !== undefined) {
-          element.scrollTop = offset + anchor.scrollDelta
+        if (anchorIndex !== undefined) {
+          const restoredFromElement = restoreAnchorElementTop(
+            anchorIndex,
+            anchor,
+          )
+          const offset =
+            virtualizer
+              .getVirtualItems()
+              .find((virtualItem) => virtualItem.index === anchorIndex)
+              ?.start ??
+            virtualizer.getOffsetForIndex(anchorIndex, 'start')?.[0]
+
+          if (!restoredFromElement && offset !== undefined) {
+            element.scrollTop = offset + anchor.scrollDelta
+
+            requestAnimationFrame(() => {
+              restoreAnchorElementTop(anchorIndex, anchor)
+            })
+          }
         }
       }
     }

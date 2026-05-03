@@ -22,7 +22,6 @@ function PrependExample() {
   const seedRef = useRef(0)
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
-  const [headReserve, setHeadReserve] = useState(1800)
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
     createTranscript(96),
   )
@@ -33,12 +32,6 @@ function PrependExample() {
 
     seedRef.current += batch.length
     setMessages((current) => [...batch, ...current])
-    setHeadReserve((current) =>
-      Math.max(
-        0,
-        current - batch.reduce((total, message) => total + message.estimate, 0),
-      ),
-    )
   }
 
   function commitMessage(value: string) {
@@ -57,7 +50,7 @@ function PrependExample() {
       title="Prepend"
       summary="Insert older messages above the viewport without moving the message the reader is looking at."
       notes={[
-        'headReserve models unloaded history before the first rendered row.',
+        'This example has no headReserve; it only prepends loaded rows.',
         'preserveScrollOnPrepend keeps the visible anchor stable.',
         'The same GPT-style composer still appends at the tail.',
       ]}
@@ -79,7 +72,6 @@ function PrependExample() {
           estimateSize={estimateMessageSize}
           getItemKey={getMessageKey}
           headInset={28}
-          headReserve={headReserve}
           initialAnchor="tail"
           itemGap={EXAMPLE_ITEM_GAP}
           itemClassName="exampleRow"

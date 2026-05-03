@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 
 const exampleRoutes = [
   '/examples/standard/',
@@ -9,6 +9,48 @@ const exampleRoutes = [
   '/examples/prepend/',
   '/examples/data-loading/',
 ]
+
+async function captureCenterExampleMessage(page: Page) {
+  return page.evaluate(() => {
+    const viewport = document.querySelector<HTMLElement>('.exampleViewport')
+    const viewportRect = viewport?.getBoundingClientRect()
+
+    if (!viewportRect) {
+      return null
+    }
+
+    const center = viewportRect.top + viewportRect.height / 2
+    const candidate =
+      [...document.querySelectorAll<HTMLElement>('[data-message-id]')]
+        .map((node) => {
+          const rect = node.getBoundingClientRect()
+
+          return {
+            id: node.dataset.messageId ?? '',
+            score: Math.abs(rect.top + rect.height / 2 - center),
+            top: Math.round(rect.top),
+          }
+        })
+        .filter(({ id }) => id.length > 0)
+        .sort((a, b) => a.score - b.score)[0] ?? null
+
+    return candidate
+  })
+}
+
+async function readExampleMessageTop(page: Page, id: string) {
+  return page.evaluate((messageId) => {
+    const message = document.querySelector<HTMLElement>(
+      `[data-message-id="${messageId}"]`,
+    )
+    const rect = message?.getBoundingClientRect()
+
+    return {
+      exists: Boolean(message),
+      top: rect ? Math.round(rect.top) : null,
+    }
+  }, id)
+}
 
 for (const route of exampleRoutes) {
   test(`${route} composer commits on Enter`, async ({ page }, testInfo) => {
@@ -55,6 +97,43 @@ for (const route of exampleRoutes) {
   })
 }
 
+test('/examples/prepend/ preserves the visible anchor when older rows load', async ({
+  page,
+}) => {
+  await page.goto('/examples/prepend/')
+
+  const viewport = page.locator('.exampleViewport')
+
+  await expect(viewport).toBeVisible()
+  await viewport.evaluate((element) => {
+    element.scrollTop = Math.max(0, element.scrollTop - 900)
+    element.dispatchEvent(new Event('scroll', { bubbles: true }))
+  })
+
+  const anchorBefore = await captureCenterExampleMessage(page)
+
+  expect(anchorBefore).not.toBeNull()
+
+  for (let count = 0; count < 3; count += 1) {
+    await page.getByRole('button', { name: 'Prepend older messages' }).click()
+
+    await expect
+      .poll(async () => {
+        const anchorAfter = await readExampleMessageTop(
+          page,
+          anchorBefore?.id ?? '',
+        )
+
+        if (!anchorAfter.exists || anchorAfter.top === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return Math.abs(anchorAfter.top - (anchorBefore?.top ?? 0))
+      })
+      .toBeLessThanOrEqual(4)
+  }
+})
+
 test('/examples/jump-to-bottom/ reveals an explicit jump control', async ({
   page,
 }) => {
@@ -84,7 +163,7 @@ test('/examples/data-loading/ shows a loading state for older data', async ({
 }) => {
   await page.goto('/examples/data-loading/')
 
-  await page.getByRole('button', { name: 'Load older page' }).click()
+  await page.getByRole('button', { name: 'Scroll backward' }).click()
   await expect(page.getByText('Loading older messages')).toBeVisible()
   await expect(page.getByText('Loading older messages')).toBeHidden({
     timeout: 3000,

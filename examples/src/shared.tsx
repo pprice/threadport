@@ -16,6 +16,7 @@ import './styles.css'
 
 export { ThreadPort }
 
+export const DATA_LOADING_HEAD_RESERVE = 24_000
 export const EXAMPLE_ITEM_GAP = 28
 
 export type DemoMessage = {
@@ -119,12 +120,7 @@ export const examples: ExampleMeta[] = [
     label: 'Prepend',
     description: 'Load older messages above while preserving the anchor.',
     href: '/examples/prepend/',
-    integration: [
-      'headReserve',
-      'preserveScrollOnPrepend',
-      'estimateSize',
-      'initialAnchor',
-    ],
+    integration: ['preserveScrollOnPrepend', 'estimateSize', 'initialAnchor'],
     ownedBy: 'viewport',
     scope: 'History',
     sourcePath: 'examples/src/pages/prepend.tsx',
@@ -136,7 +132,8 @@ export const examples: ExampleMeta[] = [
     href: '/examples/data-loading/',
     integration: [
       'onStateChange',
-      'distanceFromHead',
+      'scrollOffset',
+      'auto load threshold',
       'preserveScrollOnPrepend',
       'headReserve',
       'loading state',
@@ -252,6 +249,16 @@ export function createOlderBatch(seed: number) {
       index % 8 === 0 ? 'code' : undefined,
       index % 8 === 0 ? 'Older measured block' : undefined,
     ),
+  )
+}
+
+export function estimateVirtualBatchSize(
+  messages: readonly DemoMessage[],
+  itemGap = EXAMPLE_ITEM_GAP,
+) {
+  return (
+    messages.reduce((total, message) => total + message.estimate, 0) +
+    messages.length * itemGap
   )
 }
 
