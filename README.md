@@ -1,82 +1,55 @@
 # Threadport
 
-Headless virtualized chat viewport primitives for React.
-
-Threadport gives you the scroll mechanics for ChatGPT-style transcripts without
-owning your message UI, composer, buttons, colors, or layout system.
+Headless virtualized chat viewport primitives for React. Threadport owns scroll
+mechanics; your app owns messages, composer, buttons, styling, and layout.
 
 ## Install
 
 ```sh
-npm install threadport
+npm install threadport react
 ```
 
-Threadport expects React from your app:
-
-```sh
-npm install react
-```
-
-## Basic Usage
-
-```tsx
-import {
-  ChatVirtualViewport,
-  type ChatVirtualViewportHandle,
-} from 'threadport'
-import { useRef } from 'react'
-
-type Message = {
-  id: string
-  body: string
-}
-
-export function Chat({ messages }: { messages: Message[] }) {
-  const viewportRef = useRef<ChatVirtualViewportHandle | null>(null)
-
-  return (
-    <ChatVirtualViewport
-      ref={viewportRef}
-      items={messages}
-      getItemKey={(message) => message.id}
-      estimateSize={() => 160}
-      renderItem={({ item }) => <article>{item.body}</article>}
-      initialAnchor="tail"
-      tailInset={160}
-      tailReserve
-    />
-  )
-}
-```
-
-## Overlay-Aware Layout
-
-Use `ChatViewportFrame` and `ChatViewportOverlay` when your composer, fade, or
-floating controls overlap the viewport. The frame measures the native scrollbar
-lane and exposes geometry to overlays so they do not paint over the scrollbar.
+## Usage
 
 ```tsx
 import {
   ChatViewportFrame,
   ChatViewportOverlay,
   ChatVirtualViewport,
+  easeOutQuart,
+  type ChatVirtualViewportHandle,
 } from 'threadport'
+import { useRef } from 'react'
 
-export function ChatShell({ messages }: { messages: Message[] }) {
+type Message = { id: string; body: string }
+
+export function Chat({ messages }: { messages: Message[] }) {
+  const viewportRef = useRef<ChatVirtualViewportHandle | null>(null)
+
   return (
     <ChatViewportFrame>
       <ChatVirtualViewport
+        ref={viewportRef}
         items={messages}
         getItemKey={(message) => message.id}
         estimateSize={() => 160}
-        renderItem={({ item }) => <MessageView message={item} />}
+        renderItem={({ item }) => <article>{item.body}</article>}
         headInset={64}
         tailInset={168}
+        initialAnchor="tail"
         tailReserve
       />
 
       <ChatViewportOverlay placement="tail">
-        <Composer />
+        <Composer
+          onSubmit={(messageId) => {
+            viewportRef.current?.scrollToItem(messageId, {
+              align: 'head',
+              duration: 520,
+              easing: easeOutQuart,
+            })
+          }}
+        />
       </ChatViewportOverlay>
     </ChatViewportFrame>
   )
@@ -85,68 +58,53 @@ export function ChatShell({ messages }: { messages: Message[] }) {
 
 ## Concepts
 
-- `head`: the older/start side of the transcript.
-- `tail`: the newer/end side of the transcript.
-- `inset`: persistent overlap from app chrome, such as a top bar or composer.
-- `reserve`: intentional scrollable/measurable space, such as unloaded history or the active response tail reserve.
-- `threshold`: tolerance used for `isAtHead` and `isAtTail`.
+- `head`: older/start side of the transcript.
+- `tail`: newer/end side of the transcript.
+- `inset`: persistent overlap from app chrome, such as a header or composer.
+- `reserve`: intentional space, such as unloaded history or active tail space.
+- `threshold`: tolerance for `isAtHead` and `isAtTail`.
 
-## Public API
+## API
 
-- `ChatVirtualViewport`: virtualized, variable-height chat viewport.
-- `ChatViewportFrame`: geometry provider for overlays around a viewport.
-- `ChatViewportOverlay`: frame-relative overlay that avoids the scrollbar lane.
-- `useChatViewportFrameState`: reads measured frame geometry.
-- `easeOutCubic` / `easeOutQuart`: small easing helpers for scroll commands.
+`ChatVirtualViewport` props:
 
-## Playground
+- Required: `items`, `getItemKey`, `estimateSize`, `renderItem`.
+- Layout: `headInset`, `tailInset`, `headReserve`, `tailReserve`, `itemGap`.
+- Behavior: `initialAnchor`, `overscan`, `preserveScrollOnPrepend`, `atHeadThreshold`, `atTailThreshold`.
+- State: `onStateChange` reports scroll distance, tail/head booleans, viewport size, rendered count, and scrollbar size.
 
-Run the local playground:
+Imperative handle:
+
+- `scrollToHead(options)`
+- `scrollToTail(options)`
+- `scrollToIndex(index, { align, ...options })`
+- `scrollToItem(key, { align, ...options })`
+- `measure()`, `getState()`, `getScrollElement()`, `stopScrollAnimation()`
+
+Frame helpers:
+
+- `ChatViewportFrame`: shares inset and scrollbar geometry with overlays.
+- `ChatViewportOverlay`: frame-relative overlay; avoids the scrollbar lane by default and can forward wheel events to the viewport.
+- `useChatViewportFrameState`: read frame geometry in custom UI.
+
+## Layout Rules
+
+- Give the viewport a bounded height.
+- Keep composer and floating controls outside `ChatVirtualViewport`.
+- Pass overlap as `headInset` / `tailInset`; do not fake it with message padding.
+- Use `tailReserve` when newly appended responses should start with a screen of empty space beneath them.
+
+## Development
 
 ```sh
 npm install
 npm run dev
-```
-
-Open the visual demo at `/`. The direct API harness used by tests is available
-at `/?fixture=api`.
-
-Run the package build and playground build:
-
-```sh
-npm run build
-```
-
-Run all local checks:
-
-```sh
 npm test
-```
-
-Run only the browser regression tests:
-
-```sh
-npm run test:e2e
-```
-
-Run only the package export smoke test:
-
-```sh
-npm run test:package
-```
-
-## Publishing Checklist
-
-Before publishing:
-
-```sh
 npm run build
-npm test
 npm run pack:dry
 ```
 
-Inspect the dry-run output. Only `dist`, `README.md`, `LICENSE`, and package
-metadata should be included.
+The playground is at `/`. The API test harness is at `/?fixture=api`.
 
 ## License
 
