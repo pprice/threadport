@@ -14,24 +14,17 @@ npm install threadport react
 ## Usage
 
 ```tsx
-import {
-  ChatViewportFrame,
-  ChatViewportOverlay,
-  ChatVirtualViewport,
-  easeOutCubic,
-  easeOutQuart,
-  type ChatVirtualViewportHandle,
-} from 'threadport'
+import * as ThreadPort from 'threadport'
 import { useRef } from 'react'
 
 type Message = { id: string; body: string }
 
 export function Chat({ messages }: { messages: Message[] }) {
-  const viewportRef = useRef<ChatVirtualViewportHandle | null>(null)
+  const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
 
   return (
-    <ChatViewportFrame>
-      <ChatVirtualViewport
+    <ThreadPort.Root>
+      <ThreadPort.Viewport
         ref={viewportRef}
         items={messages}
         getItemKey={(message) => message.id}
@@ -40,22 +33,22 @@ export function Chat({ messages }: { messages: Message[] }) {
         headInset={64}
         tailInset={168}
         initialAnchor="tail"
-        scrollAnimation={easeOutCubic(420)}
+        scrollAnimation={ThreadPort.Animation.easeOutCubic(420)}
         tailReserve
         virtualizerOptions={{ overscan: 12 }}
       />
 
-      <ChatViewportOverlay placement="tail">
+      <ThreadPort.Overlay placement="tail">
         <Composer
           onSubmit={(messageId) => {
             viewportRef.current?.scrollToItem(messageId, {
               align: 'head',
-              animation: easeOutQuart(520),
+              animation: ThreadPort.Animation.easeOutQuart(520),
             })
           }}
         />
-      </ChatViewportOverlay>
-    </ChatViewportFrame>
+      </ThreadPort.Overlay>
+    </ThreadPort.Root>
   )
 }
 ```
@@ -70,7 +63,7 @@ export function Chat({ messages }: { messages: Message[] }) {
 
 ## API
 
-`ChatVirtualViewport` props:
+`Viewport` props:
 
 | Prop | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -92,11 +85,11 @@ export function Chat({ messages }: { messages: Message[] }) {
 | `overscan` | `number` | No | Extra rows rendered outside the viewport. |
 | `preserveScrollOnPrepend` | `boolean` | No | Keeps the visible anchor stable when items are inserted at the head. |
 | `role` | `string` | No | ARIA role for the scroll element. |
-| `scrollAnimation` | `ChatScrollAnimation` | No | Default animation for imperative scroll commands. |
+| `scrollAnimation` | `ScrollAnimation` | No | Default animation for imperative scroll commands. |
 | `style` | `CSSProperties` | No | Inline style for the scroll element. |
 | `tailInset` | `number` | No | Persistent overlap at the tail, usually composer space. |
-| `tailReserve` | `boolean \| ChatTailReserveOptions` | No | Gives the active appended tail item a viewport-sized minimum height. |
-| `virtualizerOptions` | `ChatVirtualizerOptions` | No | Safe TanStack Virtual options; Threadport-owned scroll/padding options are omitted. |
+| `tailReserve` | `boolean \| TailReserveOptions` | No | Gives the active appended tail item a viewport-sized minimum height. |
+| `virtualizerOptions` | `VirtualizerOptions` | No | Safe TanStack Virtual options; Threadport-owned scroll/padding options are omitted. |
 
 `virtualizerOptions` is for TanStack tuning without prop thunking. Threadport
 still owns `count`, `getScrollElement`, item keys, estimates, inset padding,
@@ -114,20 +107,20 @@ Imperative handle:
 
 Animation factories:
 
-- `linear(duration)`
-- `easeOutQuad(duration)`, `easeOutCubic(duration)`, `easeOutQuart(duration)`, `easeOutQuint(duration)`
-- `easeInOutCubic(duration)`
+- `Animation.linear(duration)`
+- `Animation.easeOutQuad(duration)`, `Animation.easeOutCubic(duration)`, `Animation.easeOutQuart(duration)`, `Animation.easeOutQuint(duration)`
+- `Animation.easeInOutCubic(duration)`
 
 Frame helpers:
 
-- `ChatViewportFrame`: shares inset and scrollbar geometry with overlays.
-- `ChatViewportOverlay`: frame-relative overlay; avoids the scrollbar lane by default and can forward wheel events to the viewport.
-- `useChatViewportFrameState`: read frame geometry in custom UI.
+- `Root`: shares inset and scrollbar geometry with overlays.
+- `Overlay`: frame-relative overlay; avoids the scrollbar lane by default and can forward wheel events to the viewport.
+- `useRootState`: read frame geometry in custom UI.
 
 ## Layout Rules
 
 - Give the viewport a bounded height.
-- Keep composer and floating controls outside `ChatVirtualViewport`.
+- Keep composer and floating controls outside `Viewport`.
 - Pass overlap as `headInset` / `tailInset`; do not fake it with message padding.
 - Use `tailReserve` when newly appended responses should start with a screen of empty space beneath them.
 
@@ -137,11 +130,17 @@ Frame helpers:
 npm install
 npm run dev
 npm test
+npm run test:react
+npm run test:integration
 npm run build
 npm run pack:dry
 ```
 
-The playground is at `/`. The API test harness is at `/?fixture=api`.
+The examples site is at `/` in dev. Test fixtures live at `/fixtures/`, and
+the API test harness is at `/fixtures/?fixture=api`.
+
+React component tests live in `tests/react`. Browser-backed integration tests
+live in `tests/integration`.
 
 ## License
 

@@ -1,10 +1,10 @@
-import type { ChatVirtualizerOptions, ChatVirtualViewportProps } from '../../src'
+import type { ViewportProps, VirtualizerOptions } from '../../src'
 
 type Item = {
   id: string
 }
 
-const safeOptions: ChatVirtualizerOptions = {
+const safeOptions: VirtualizerOptions = {
   debug: true,
   gap: 4,
   isScrollingResetDelay: 120,
@@ -13,7 +13,7 @@ const safeOptions: ChatVirtualizerOptions = {
   useScrollendEvent: true,
 }
 
-const props: ChatVirtualViewportProps<Item> = {
+const props: ViewportProps<Item> = {
   estimateSize: () => 80,
   getItemKey: (item) => item.id,
   items: [{ id: '1' }],
@@ -23,7 +23,7 @@ const props: ChatVirtualViewportProps<Item> = {
 
 void props
 
-const shorthandOverrides: ChatVirtualViewportProps<Item> = {
+const shorthandOverrides: ViewportProps<Item> = {
   estimateSize: () => 80,
   getItemKey: (item) => item.id,
   itemGap: 8,
@@ -38,35 +38,35 @@ const shorthandOverrides: ChatVirtualViewportProps<Item> = {
 
 void shorthandOverrides
 
-const countIsOwned: ChatVirtualizerOptions = {
+const countIsOwned: VirtualizerOptions = {
   // @ts-expect-error Threadport owns item count.
   count: 10,
 }
 
 void countIsOwned
 
-const scrollElementIsOwned: ChatVirtualizerOptions = {
+const scrollElementIsOwned: VirtualizerOptions = {
   // @ts-expect-error Threadport owns the scroll element.
   getScrollElement: () => null,
 }
 
 void scrollElementIsOwned
 
-const paddingIsOwned: ChatVirtualizerOptions = {
+const paddingIsOwned: VirtualizerOptions = {
   // @ts-expect-error Threadport derives padding from head/tail insets.
   paddingStart: 24,
 }
 
 void paddingIsOwned
 
-const changeHandlerIsOwned: ChatVirtualizerOptions = {
+const changeHandlerIsOwned: VirtualizerOptions = {
   // @ts-expect-error Threadport owns virtualizer change handling.
   onChange: () => undefined,
 }
 
 void changeHandlerIsOwned
 
-const lanesAreOwned: ChatVirtualizerOptions = {
+const lanesAreOwned: VirtualizerOptions = {
   // @ts-expect-error Threadport is a one-dimensional chat viewport.
   lanes: 2,
 }

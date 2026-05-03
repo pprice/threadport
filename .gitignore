@@ -9,6 +9,7 @@ dist-ssr/
 build/
 coverage/
 dist-playground/
+dist-examples/
 playwright-report/
 test-results/
 *.tsbuildinfo
