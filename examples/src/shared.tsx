@@ -1,9 +1,11 @@
 import {
+  type Dispatch,
   type FormEvent,
   type KeyboardEvent,
   memo,
   type ReactNode,
   type RefObject,
+  type SetStateAction,
   StrictMode,
   useEffect,
   useState,
@@ -67,6 +69,22 @@ export const examples: ExampleMeta[] = [
     ownedBy: 'viewport',
     scope: 'Chrome',
     sourcePath: 'examples/src/pages/insets.tsx',
+  },
+  {
+    id: 'long-response',
+    label: 'Long response',
+    description: 'Tail reserve with a deliberately long assistant answer.',
+    href: '/examples/long-response/',
+    integration: [
+      'tailReserve',
+      'minHeight',
+      'scrollToItem',
+      'estimateSize',
+      'measureElement',
+    ],
+    ownedBy: 'viewport',
+    scope: 'Tail reserve',
+    sourcePath: 'examples/src/pages/long-response.tsx',
   },
   {
     id: 'jump-to-bottom',
@@ -155,6 +173,16 @@ export function estimateMessageSize(message: DemoMessage) {
   return message.estimate
 }
 
+function estimateBodySize(body: string, variant?: DemoMessage['variant']) {
+  const lineEstimate = Math.ceil(body.length / 74) * 24
+
+  return variant === 'visual'
+    ? 340
+    : variant === 'code'
+      ? 260
+      : 96 + lineEstimate
+}
+
 export function getMessageKey(message: DemoMessage) {
   return message.id
 }
@@ -165,12 +193,9 @@ export function createMessage(
   variant?: DemoMessage['variant'],
   title?: string,
 ): DemoMessage {
-  const lineEstimate = Math.ceil(body.length / 74) * 24
-
   return {
     body,
-    estimate:
-      variant === 'visual' ? 340 : variant === 'code' ? 260 : 96 + lineEstimate,
+    estimate: estimateBodySize(body, variant),
     id: nextId(role),
     role,
     title,
@@ -237,6 +262,48 @@ export function createGptExchange(value: string, assistantBody?: string) {
   )
 
   return { assistantMessage, userMessage }
+}
+
+export function streamMessageChunks({
+  chunks,
+  interval = 110,
+  messageId,
+  setMessages,
+}: {
+  chunks: readonly string[]
+  interval?: number
+  messageId: string
+  setMessages: Dispatch<SetStateAction<DemoMessage[]>>
+}) {
+  let chunkIndex = 0
+
+  const timer = window.setInterval(() => {
+    const chunk = chunks[chunkIndex]
+
+    if (chunk === undefined) {
+      window.clearInterval(timer)
+      return
+    }
+
+    setMessages((current) =>
+      current.map((message) => {
+        if (message.id !== messageId) {
+          return message
+        }
+
+        const body = `${message.body}${chunk}`
+
+        return {
+          ...message,
+          body,
+          estimate: estimateBodySize(body, message.variant),
+        }
+      }),
+    )
+    chunkIndex += 1
+  }, interval)
+
+  return () => window.clearInterval(timer)
 }
 
 export function scrollPromptToHead(

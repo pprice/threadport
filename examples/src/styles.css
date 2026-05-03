@@ -976,6 +976,10 @@ h1 {
   min-width: 0;
 }
 
+.longTailReserve {
+  min-width: 0;
+}
+
 .composerDock {
   display: flex;
   align-items: flex-end;

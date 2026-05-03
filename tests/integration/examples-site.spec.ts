@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 const exampleRoutes = [
   '/examples/standard/',
   '/examples/insets/',
+  '/examples/long-response/',
   '/examples/jump-to-bottom/',
   '/examples/mobile/',
   '/examples/prepend/',
@@ -64,6 +65,18 @@ test('/examples/jump-to-bottom/ reveals an explicit jump control', async ({
   await expect(
     page.getByRole('button', { name: 'Jump to bottom' }),
   ).toBeVisible()
+})
+
+test('/examples/long-response/ streams the long assistant row', async ({
+  page,
+}) => {
+  await page.goto('/examples/long-response/')
+
+  await page.getByRole('button', { name: 'Append long response' }).click()
+
+  await expect(
+    page.locator('[data-message-role="assistant"]').last(),
+  ).toContainText('The final result is mundane', { timeout: 5000 })
 })
 
 test('/examples/data-loading/ shows a loading state for older data', async ({

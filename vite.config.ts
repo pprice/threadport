@@ -9,6 +9,7 @@ export default defineConfig({
         insets: 'examples/insets/index.html',
         index: 'index.html',
         jumpToBottom: 'examples/jump-to-bottom/index.html',
+        longResponse: 'examples/long-response/index.html',
         mobile: 'examples/mobile/index.html',
         prepend: 'examples/prepend/index.html',
         standard: 'examples/standard/index.html',
