@@ -40,9 +40,12 @@
   color: var(--ink);
   background: var(--paper);
   font-family:
-    "General Sans", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    "General Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 1,
+    "calt" 1;
   font-optical-sizing: auto;
   font-synthesis: none;
   font-variant-numeric: lining-nums proportional-nums;
@@ -59,7 +62,9 @@ samp {
   font-family:
     "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", monospace;
-  font-feature-settings: "kern" 1, "liga" 0;
+  font-feature-settings:
+    "kern" 1,
+    "liga" 0;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
@@ -967,6 +972,10 @@ h1 {
   min-width: 0;
 }
 
+.gptTailReserve {
+  min-width: 0;
+}
+
 .composerDock {
   display: flex;
   align-items: flex-end;
@@ -1025,6 +1034,73 @@ h1 {
   opacity: 0.72;
 }
 
+.insetHeadDock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem clamp(1rem, 3vw, 2rem);
+  border-block-end: 1px solid
+    color-mix(in oklch, var(--accent) 24%, var(--line));
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--accent-soft) 66%, transparent) 0 0.65rem,
+      transparent 0.65rem 1.3rem
+    ),
+    color-mix(in oklch, var(--surface) 88%, var(--accent-soft));
+  pointer-events: none;
+}
+
+.insetTailDock {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  border-block-start: 1px solid
+    color-mix(in oklch, var(--host) 25%, var(--line));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--surface) 68%, transparent),
+    color-mix(in oklch, var(--surface) 90%, var(--host-soft)) 42%,
+    var(--surface) 100%
+  );
+  pointer-events: none;
+}
+
+.insetTailDock .composer {
+  justify-self: center;
+}
+
+.insetBand {
+  width: min(46rem, calc(100% - 2rem));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.insetBand span {
+  color: var(--muted);
+}
+
+.insetBand code {
+  padding: 0.32rem 0.52rem;
+  border: 1px solid color-mix(in oklch, var(--ink) 18%, var(--line));
+  border-radius: 7px;
+  background: color-mix(in oklch, var(--surface) 76%, transparent);
+  color: var(--ink);
+  font-size: 0.74rem;
+}
+
+.jumpOverlay {
+  pointer-events: none;
+}
+
 .floatingJump {
   position: absolute;
   inset-block-end: 5.2rem;
@@ -1040,6 +1116,25 @@ h1 {
   letter-spacing: -0.005em;
   pointer-events: auto;
   box-shadow: 0 0.8rem 1.8rem var(--shadow);
+}
+
+.dataLoadingDock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  pointer-events: none;
+}
+
+.loadingChip {
+  padding: 0.45rem 0.66rem;
+  border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--surface) 86%, var(--accent-soft));
+  color: var(--accent-deep);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .emptyState {

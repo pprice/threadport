@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import {
   Composer,
-  createMessage,
+  createGptExchange,
   createTranscript,
   type DemoMessage,
   ExamplePage,
@@ -10,48 +10,45 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  scrollPromptToHead,
   ThreadPort,
   useReducedMotion,
 } from '../shared'
 
-function BasicExample() {
+function StandardExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
-    createTranscript(44),
+    createTranscript(36),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
 
   function commitMessage(value: string) {
-    const userMessage = createMessage('user', value)
+    const { assistantMessage, userMessage } = createGptExchange(
+      value,
+      'The prompt is aligned below the head inset, then the assistant response starts in the open space beneath it.',
+    )
 
-    setMessages((current) => [...current, userMessage])
-    requestAnimationFrame(() => {
-      viewportRef.current?.scrollToItem(userMessage.id, {
-        align: 'head',
-        animation: reducedMotion
-          ? { duration: 0 }
-          : ThreadPort.Animation.easeOutQuart(420),
-      })
-    })
+    setMessages((current) => [...current, userMessage, assistantMessage])
+    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
   }
 
   return (
     <ExamplePage
-      activeId="basic"
-      title="Basic transcript"
-      summary="A bounded chat viewport with variable-height messages and an integrator-owned composer."
+      activeId="standard"
+      title="Standard"
+      summary="A GPT-style transcript: submit a prompt, align it high, and let the response begin with room below."
       notes={[
-        'The viewport receives items, estimates, keys, and a render function.',
-        'Composer and surface chrome are outside the virtualized rows.',
-        'The example starts at the tail without forcing follow behavior later.',
+        'The host app appends both the user prompt and assistant row.',
+        'scrollToItem aligns the submitted prompt to the head.',
+        'tailReserve gives the newest response a natural starting space.',
       ]}
       aside={<Metrics state={state} />}
     >
       <ThreadPort.Root className="demoFrame">
         <ThreadPort.Viewport
           ref={viewportRef}
-          ariaLabel="Basic virtualized transcript"
+          ariaLabel="Standard GPT-style transcript"
           className="exampleViewport"
           contentClassName="exampleContent"
           estimateSize={estimateMessageSize}
@@ -63,7 +60,8 @@ function BasicExample() {
           onStateChange={setState}
           renderItem={({ item }) => <MessageView message={item} />}
           role="log"
-          tailInset={96}
+          tailInset={108}
+          tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 8 }}
         />
         <ThreadPort.Overlay className="composerDock" placement="tail">
@@ -74,4 +72,4 @@ function BasicExample() {
   )
 }
 
-mountPage(<BasicExample />)
+mountPage(<StandardExample />)

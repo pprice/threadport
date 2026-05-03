@@ -1,0 +1,88 @@
+import { useRef, useState } from 'react'
+import {
+  Composer,
+  createGptExchange,
+  createTranscript,
+  type DemoMessage,
+  ExamplePage,
+  estimateMessageSize,
+  getMessageKey,
+  MessageView,
+  Metrics,
+  mountPage,
+  scrollPromptToHead,
+  ThreadPort,
+  useReducedMotion,
+} from '../shared'
+
+const headInset = 84
+const tailInset = 140
+
+function InsetsExample() {
+  const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
+  const reducedMotion = useReducedMotion()
+  const [messages, setMessages] = useState<DemoMessage[]>(() =>
+    createTranscript(34),
+  )
+  const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+
+  function commitMessage(value: string) {
+    const { assistantMessage, userMessage } = createGptExchange(
+      value,
+      'The rendered inset bands are overlays, not rows. They reserve space while the transcript remains virtualized.',
+    )
+
+    setMessages((current) => [...current, userMessage, assistantMessage])
+    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
+  }
+
+  return (
+    <ExamplePage
+      activeId="insets"
+      title="Insets"
+      summary="Render the head and tail insets so the reserved chrome space is visible while messages keep their GPT-style flow."
+      notes={[
+        'headInset reserves room for frame chrome above the transcript.',
+        'tailInset reserves room for the composer below the transcript.',
+        'Both visible bands are host-owned overlays.',
+      ]}
+      aside={<Metrics state={state} />}
+    >
+      <ThreadPort.Root className="demoFrame">
+        <ThreadPort.Viewport
+          ref={viewportRef}
+          ariaLabel="Inset transcript"
+          className="exampleViewport"
+          contentClassName="exampleContent"
+          estimateSize={estimateMessageSize}
+          getItemKey={getMessageKey}
+          headInset={headInset}
+          initialAnchor="tail"
+          itemClassName="exampleRow"
+          items={messages}
+          onStateChange={setState}
+          renderItem={({ item }) => <MessageView message={item} />}
+          role="log"
+          tailInset={tailInset}
+          tailReserve={{ className: 'tailReserve gptTailReserve' }}
+          virtualizerOptions={{ overscan: 8 }}
+        />
+        <ThreadPort.Overlay className="insetHeadDock" placement="head">
+          <div className="insetBand">
+            <span>headInset</span>
+            <code>{headInset}px</code>
+          </div>
+        </ThreadPort.Overlay>
+        <ThreadPort.Overlay className="insetTailDock" placement="tail">
+          <div className="insetBand">
+            <span>tailInset</span>
+            <code>{tailInset}px</code>
+          </div>
+          <Composer onSubmit={commitMessage} />
+        </ThreadPort.Overlay>
+      </ThreadPort.Root>
+    </ExamplePage>
+  )
+}
+
+mountPage(<InsetsExample />)

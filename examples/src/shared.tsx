@@ -3,6 +3,7 @@ import {
   type KeyboardEvent,
   memo,
   type ReactNode,
+  type RefObject,
   StrictMode,
   useEffect,
   useState,
@@ -35,58 +36,69 @@ type ExampleMeta = {
 
 export const examples: ExampleMeta[] = [
   {
-    id: 'basic',
-    label: 'Basic transcript',
-    description: 'A bounded viewport with variable-height messages.',
-    href: '/examples/basic/',
+    id: 'standard',
+    label: 'Standard',
+    description: 'A GPT-style transcript with submitted prompts aligned high.',
+    href: '/examples/standard/',
     integration: [
       'items',
       'estimateSize',
       'getItemKey',
       'renderItem',
-      'tailInset',
+      'scrollToItem',
+      'tailReserve',
     ],
-    ownedBy: 'viewport',
-    scope: 'Rendering',
-    sourcePath: 'examples/src/pages/basic.tsx',
+    ownedBy: 'host',
+    scope: 'Baseline',
+    sourcePath: 'examples/src/pages/standard.tsx',
   },
   {
-    id: 'streaming',
-    label: 'Streaming response',
-    description: 'Append content without forcing tail-follow behavior.',
-    href: '/examples/streaming/',
+    id: 'insets',
+    label: 'Insets',
+    description: 'Visible head and tail insets for app chrome.',
+    href: '/examples/insets/',
+    integration: [
+      'headInset',
+      'tailInset',
+      'Overlay head',
+      'Overlay tail',
+      'scrollToItem',
+    ],
+    ownedBy: 'viewport',
+    scope: 'Chrome',
+    sourcePath: 'examples/src/pages/insets.tsx',
+  },
+  {
+    id: 'jump-to-bottom',
+    label: 'Jump to bottom',
+    description: 'Expose a jump control when the reader leaves the tail.',
+    href: '/examples/jump-to-bottom/',
     integration: [
       'ViewportHandle',
-      'scrollToItem',
       'scrollToTail',
       'onStateChange',
+      'Overlay fill',
       'useReducedMotion',
     ],
     ownedBy: 'host',
     scope: 'Policy',
-    sourcePath: 'examples/src/pages/streaming.tsx',
+    sourcePath: 'examples/src/pages/jump-to-bottom.tsx',
   },
   {
-    id: 'tail-reserve',
-    label: 'Tail reserve',
-    description: 'Start a new response with a screen of active space.',
-    href: '/examples/tail-reserve/',
-    integration: [
-      'tailReserve',
-      'tailInset',
-      'scrollToItem',
-      'Overlay',
-      'Composer',
-    ],
-    ownedBy: 'viewport',
-    scope: 'Append',
-    sourcePath: 'examples/src/pages/tail-reserve.tsx',
+    id: 'mobile',
+    label: 'Mobile',
+    description: 'A phone-sized GPT shell with frame-relative overlays.',
+    href: '/examples/mobile/',
+    integration: ['headInset', 'tailInset', 'Overlay', 'Root', 'Viewport'],
+    ownedBy: 'host',
+    scope: 'Responsive',
+    sourcePath: 'examples/src/pages/mobile.tsx',
   },
   {
-    id: 'history',
-    label: 'History prepend',
+    id: 'prepend',
+    label: 'Prepend',
     description: 'Load older messages above while preserving the anchor.',
-    href: '/examples/history/',
+    href: '/examples/prepend/',
     integration: [
       'headReserve',
       'preserveScrollOnPrepend',
@@ -95,43 +107,23 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'viewport',
     scope: 'History',
-    sourcePath: 'examples/src/pages/history.tsx',
+    sourcePath: 'examples/src/pages/prepend.tsx',
   },
   {
-    id: 'mobile',
-    label: 'Mobile shell',
-    description: 'Insets and overlays inside a phone-sized frame.',
-    href: '/examples/mobile/',
-    integration: ['headInset', 'tailInset', 'Overlay', 'Root', 'Viewport'],
-    ownedBy: 'host',
-    scope: 'Chrome',
-    sourcePath: 'examples/src/pages/mobile.tsx',
-  },
-  {
-    id: 'empty',
-    label: 'No content',
-    description: 'An empty viewport with integrator-owned empty state.',
-    href: '/examples/empty/',
-    integration: ['items={[]}', 'Overlay fill', 'tailInset', 'renderItem'],
-    ownedBy: 'host',
-    scope: 'Empty',
-    sourcePath: 'examples/src/pages/empty.tsx',
-  },
-  {
-    id: 'controls',
-    label: 'Imperative controls',
-    description: 'Scroll by head, tail, index, and item key.',
-    href: '/examples/controls/',
+    id: 'data-loading',
+    label: 'Data loading',
+    description: 'Fetch older pages as the reader scrolls backward.',
+    href: '/examples/data-loading/',
     integration: [
-      'ViewportHandle',
-      'scrollToHead',
-      'scrollToTail',
-      'scrollToIndex',
-      'scrollToItem',
+      'onStateChange',
+      'distanceFromHead',
+      'preserveScrollOnPrepend',
+      'headReserve',
+      'loading state',
     ],
     ownedBy: 'host',
-    scope: 'API',
-    sourcePath: 'examples/src/pages/controls.tsx',
+    scope: 'Loading',
+    sourcePath: 'examples/src/pages/data-loading.tsx',
   },
 ]
 
@@ -234,6 +226,35 @@ export function createOlderBatch(seed: number) {
       index % 8 === 0 ? 'Older measured block' : undefined,
     ),
   )
+}
+
+export function createGptExchange(value: string, assistantBody?: string) {
+  const userMessage = createMessage('user', value)
+  const assistantMessage = createMessage(
+    'assistant',
+    assistantBody ??
+      'This assistant row is ordinary React content. Threadport only keeps the submitted prompt aligned and the viewport measured.',
+  )
+
+  return { assistantMessage, userMessage }
+}
+
+export function scrollPromptToHead(
+  viewportRef: RefObject<ThreadPort.ViewportHandle | null>,
+  messageId: string,
+  reducedMotion: boolean,
+  duration = 420,
+) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      viewportRef.current?.scrollToItem(messageId, {
+        align: 'head',
+        animation: reducedMotion
+          ? { duration: 0 }
+          : ThreadPort.Animation.easeOutQuart(duration),
+      })
+    })
+  })
 }
 
 export const MessageView = memo(function MessageView({

@@ -5,14 +5,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        basic: 'examples/basic/index.html',
-        controls: 'examples/controls/index.html',
-        empty: 'examples/empty/index.html',
-        history: 'examples/history/index.html',
+        dataLoading: 'examples/data-loading/index.html',
+        insets: 'examples/insets/index.html',
         index: 'index.html',
+        jumpToBottom: 'examples/jump-to-bottom/index.html',
         mobile: 'examples/mobile/index.html',
-        streaming: 'examples/streaming/index.html',
-        tailReserve: 'examples/tail-reserve/index.html',
+        prepend: 'examples/prepend/index.html',
+        standard: 'examples/standard/index.html',
       },
     },
   },

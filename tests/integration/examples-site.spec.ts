@@ -1,13 +1,12 @@
 import { expect, test } from '@playwright/test'
 
 const exampleRoutes = [
-  '/examples/basic/',
-  '/examples/streaming/',
-  '/examples/tail-reserve/',
-  '/examples/history/',
+  '/examples/standard/',
+  '/examples/insets/',
+  '/examples/jump-to-bottom/',
   '/examples/mobile/',
-  '/examples/empty/',
-  '/examples/controls/',
+  '/examples/prepend/',
+  '/examples/data-loading/',
 ]
 
 for (const route of exampleRoutes) {
@@ -27,6 +26,54 @@ for (const route of exampleRoutes) {
     await composer.press('Enter')
 
     await expect(composer).toHaveValue('')
-    await expect(page.getByText(text)).toBeVisible()
+
+    const submittedPrompt = page
+      .locator('[data-message-role="user"]')
+      .filter({ hasText: text })
+      .last()
+    const viewport = page.locator('.exampleViewport')
+
+    await expect(submittedPrompt).toBeVisible()
+
+    await expect
+      .poll(
+        async () => {
+          const [promptBox, viewportBox] = await Promise.all([
+            submittedPrompt.boundingBox(),
+            viewport.boundingBox(),
+          ])
+
+          expect(promptBox).not.toBeNull()
+          expect(viewportBox).not.toBeNull()
+
+          return (promptBox?.y ?? 0) - (viewportBox?.y ?? 0)
+        },
+        { timeout: 2400 },
+      )
+      .toBeLessThan(190)
   })
 }
+
+test('/examples/jump-to-bottom/ reveals an explicit jump control', async ({
+  page,
+}) => {
+  await page.goto('/examples/jump-to-bottom/')
+
+  await page.getByRole('button', { name: 'Read earlier' }).click()
+
+  await expect(
+    page.getByRole('button', { name: 'Jump to bottom' }),
+  ).toBeVisible()
+})
+
+test('/examples/data-loading/ shows a loading state for older data', async ({
+  page,
+}) => {
+  await page.goto('/examples/data-loading/')
+
+  await page.getByRole('button', { name: 'Load older page' }).click()
+  await expect(page.getByText('Loading older messages')).toBeVisible()
+  await expect(page.getByText('Loading older messages')).toBeHidden({
+    timeout: 3000,
+  })
+})

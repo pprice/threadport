@@ -143,16 +143,15 @@ function Home() {
             <p className="eyebrow">Threadport examples</p>
             <h1>The headless chat viewport for React</h1>
             <p className="lede">
-              Dynamic measurement, prepend anchoring, frame overlays, imperative
-              commands, and optional tail reserve for ChatGPT and Claude-style
-              transcripts.
+              Dynamic measurement, inset-aware overlays, prepend anchoring, and
+              explicit jump policy for GPT-style transcripts.
             </p>
             <div className="homeActions">
-              <a className="button primary" href="/examples/basic/">
-                Start with basic
+              <a className="button primary" href="/examples/standard/">
+                Start with standard
               </a>
-              <a className="button" href="/examples/empty/">
-                Empty viewport
+              <a className="button" href="/examples/insets/">
+                Inspect insets
               </a>
             </div>
           </div>
@@ -220,9 +219,8 @@ function Home() {
             <p className="eyebrow">Examples</p>
             <h2>Focused pages, readable integrations</h2>
             <p className="lede">
-              Each behavior has its own small page. No scenario switcher, no
-              hidden test route, no shared app state that obscures the
-              integration.
+              Six focused pages. Each keeps the chat surface familiar while the
+              integration point stays visible in the code and surrounding notes.
             </p>
           </div>
 

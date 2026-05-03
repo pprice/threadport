@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import {
   Composer,
-  createMessage,
+  createGptExchange,
   createTranscript,
   type DemoMessage,
   ExamplePage,
@@ -10,6 +10,7 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  scrollPromptToHead,
   ThreadPort,
   useReducedMotion,
 } from '../shared'
@@ -23,28 +24,24 @@ function MobileExample() {
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
 
   function commitMessage(value: string) {
-    const userMessage = createMessage('user', value)
+    const { assistantMessage, userMessage } = createGptExchange(
+      value,
+      'The mobile frame uses the same submit policy: align the prompt high and let the answer start beneath it.',
+    )
 
-    setMessages((current) => [...current, userMessage])
-    requestAnimationFrame(() => {
-      viewportRef.current?.scrollToItem(userMessage.id, {
-        align: 'head',
-        animation: reducedMotion
-          ? { duration: 0 }
-          : ThreadPort.Animation.easeOutQuart(420),
-      })
-    })
+    setMessages((current) => [...current, userMessage, assistantMessage])
+    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
   }
 
   return (
     <ExamplePage
       activeId="mobile"
-      title="Mobile shell"
-      summary="Insets and frame-relative overlays keep phone chrome outside the virtualized list."
+      title="Mobile"
+      summary="A phone-sized GPT shell with fixed chrome, a composer overlay, and the same prompt-to-top submit behavior."
       notes={[
         'The top overlay is not a row.',
         'Wheel and touch scrolling stay attached to the viewport.',
-        'The composer is outside the measured message tree.',
+        'Submitted prompts align below the mobile head inset.',
       ]}
       aside={<Metrics state={state} />}
     >
@@ -69,6 +66,7 @@ function MobileExample() {
             renderItem={({ item }) => <MessageView message={item} />}
             role="log"
             tailInset={150}
+            tailReserve={{ className: 'tailReserve gptTailReserve' }}
             virtualizerOptions={{ overscan: 8 }}
           />
           <ThreadPort.Overlay className="composerDock" placement="tail">
