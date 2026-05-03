@@ -177,7 +177,6 @@ export function ApiHarness() {
           itemClassName="apiRow"
           items={items}
           onStateChange={setState}
-          overscan={8}
           renderItem={({ item }) => (
             <article
               className="apiMessage"
@@ -190,6 +189,7 @@ export function ApiHarness() {
           role="log"
           tailInset={tailInset}
           tailReserve={{ className: 'apiTailReserve' }}
+          virtualizerOptions={{ overscan: 2 }}
         />
 
         <ChatViewportOverlay

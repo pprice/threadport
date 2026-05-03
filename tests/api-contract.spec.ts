@@ -174,7 +174,7 @@ test('imperative scroll methods target head, index, item key, and tail', async (
   const snapshot = await readApiSnapshot(page)
 
   expect(snapshot.pageScrollY).toBe(0)
-  expect(snapshot.renderedRows).toBeLessThan(40)
+  expect(snapshot.renderedRows).toBeLessThanOrEqual(20)
 })
 
 test('prop-only inset and threshold changes update state and geometry', async ({

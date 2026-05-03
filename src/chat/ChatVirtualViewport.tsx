@@ -1,5 +1,6 @@
 import {
   useVirtualizer,
+  type ReactVirtualizerOptions,
   type VirtualItem,
 } from '@tanstack/react-virtual'
 import {
@@ -69,6 +70,35 @@ export type ChatTailReserveOptions = {
 
 export type ChatTailReserveConfig = boolean | ChatTailReserveOptions
 
+type ChatOwnedVirtualizerOption =
+  | 'count'
+  | 'enabled'
+  | 'estimateSize'
+  | 'getItemKey'
+  | 'getScrollElement'
+  | 'horizontal'
+  | 'indexAttribute'
+  | 'initialOffset'
+  | 'isRtl'
+  | 'laneAssignmentMode'
+  | 'lanes'
+  | 'observeElementOffset'
+  | 'observeElementRect'
+  | 'onChange'
+  | 'paddingEnd'
+  | 'paddingStart'
+  | 'scrollMargin'
+  | 'scrollPaddingEnd'
+  | 'scrollPaddingStart'
+  | 'scrollToFn'
+
+export type ChatVirtualizerOptions = Partial<
+  Omit<
+    ReactVirtualizerOptions<HTMLDivElement, HTMLDivElement>,
+    ChatOwnedVirtualizerOption
+  >
+>
+
 export type ChatVirtualViewportHandle = {
   getScrollElement: () => HTMLDivElement | null
   getState: () => ChatViewportState
@@ -112,6 +142,7 @@ export type ChatVirtualViewportProps<TItem> = {
   style?: CSSProperties
   tailInset?: number
   tailReserve?: ChatTailReserveConfig
+  virtualizerOptions?: ChatVirtualizerOptions
 }
 
 type AnchorSnapshot = {
@@ -323,14 +354,15 @@ function ChatVirtualViewportInner<TItem>(
     headReserve = 0,
     initialAnchor = 'head',
     itemClassName,
-    itemGap = 0,
+    itemGap,
     onStateChange,
-    overscan = 10,
+    overscan,
     preserveScrollOnPrepend = true,
     role,
     style,
     tailInset = 0,
     tailReserve,
+    virtualizerOptions,
   }: ChatVirtualViewportProps<TItem>,
   forwardedRef: ForwardedRef<ChatVirtualViewportHandle>,
 ) {
@@ -365,6 +397,8 @@ function ChatVirtualViewportInner<TItem>(
   const tailReserveOptions =
     typeof tailReserve === 'object' ? tailReserve : undefined
   const headPadding = Math.max(0, headInset) + Math.max(0, headReserve)
+  const virtualizerGap = itemGap ?? virtualizerOptions?.gap ?? 0
+  const virtualizerOverscan = overscan ?? virtualizerOptions?.overscan ?? 10
 
   const keyToIndex = useMemo(() => {
     const map = new Map<ChatItemKey, number>()
@@ -593,6 +627,7 @@ function ChatVirtualViewportInner<TItem>(
   }
 
   const virtualizer = useVirtualizer<HTMLDivElement, HTMLDivElement>({
+    ...virtualizerOptions,
     count: items.length,
     estimateSize: (index) => {
       const item = items[index]
@@ -603,7 +638,6 @@ function ChatVirtualViewportInner<TItem>(
 
       return estimateSize(item, index)
     },
-    gap: itemGap,
     getItemKey: (index) => {
       const item = items[index]
 
@@ -614,17 +648,19 @@ function ChatVirtualViewportInner<TItem>(
       return getItemKey(item, index)
     },
     getScrollElement: () => scrollRef.current,
+    gap: virtualizerGap,
     onChange: () => {
       captureAnchor()
       scheduleStateEmit()
       scheduleSettledStateEmit()
     },
-    overscan,
+    overscan: virtualizerOverscan,
     paddingEnd: tailInset,
     paddingStart: headPadding,
     scrollPaddingEnd: tailInset,
     scrollPaddingStart: headInset,
-    useAnimationFrameWithResizeObserver: true,
+    useAnimationFrameWithResizeObserver:
+      virtualizerOptions?.useAnimationFrameWithResizeObserver ?? true,
   })
 
   useLayoutEffect(() => {

@@ -11,6 +11,7 @@ export {
   type ChatTailReserveOptions,
   type ChatViewportState,
   type ChatVirtualRenderArgs,
+  type ChatVirtualizerOptions,
   type ChatVirtualViewportHandle,
   type ChatVirtualViewportProps,
 } from './ChatVirtualViewport'

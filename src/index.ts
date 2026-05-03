@@ -22,6 +22,7 @@ export {
   type ChatViewportOverlayProps,
   type ChatViewportState,
   type ChatVirtualRenderArgs,
+  type ChatVirtualizerOptions,
   type ChatVirtualViewportHandle,
   type ChatVirtualViewportProps,
 } from './chat'

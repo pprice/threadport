@@ -40,6 +40,7 @@ export function Chat({ messages }: { messages: Message[] }) {
         tailInset={168}
         initialAnchor="tail"
         tailReserve
+        virtualizerOptions={{ overscan: 12 }}
       />
 
       <ChatViewportOverlay placement="tail">
@@ -93,6 +94,13 @@ export function Chat({ messages }: { messages: Message[] }) {
 | `style` | `CSSProperties` | No | Inline style for the scroll element. |
 | `tailInset` | `number` | No | Persistent overlap at the tail, usually composer space. |
 | `tailReserve` | `boolean \| ChatTailReserveOptions` | No | Gives the active appended tail item a viewport-sized minimum height. |
+| `virtualizerOptions` | `ChatVirtualizerOptions` | No | Safe TanStack Virtual options; Threadport-owned scroll/padding options are omitted. |
+
+`virtualizerOptions` is for TanStack tuning without prop thunking. Threadport
+still owns `count`, `getScrollElement`, item keys, estimates, inset padding,
+scroll padding, `onChange`, orientation, lanes, and initial offset. `overscan`
+and `itemGap` are shorthands that win over `virtualizerOptions.overscan` and
+`virtualizerOptions.gap`.
 
 Imperative handle:
 
