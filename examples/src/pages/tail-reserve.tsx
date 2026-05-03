@@ -11,10 +11,12 @@ import {
   Metrics,
   mountPage,
   ThreadPort,
+  useReducedMotion,
 } from '../shared'
 
 function TailReserveExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
+  const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
     createTranscript(16),
   )
@@ -33,7 +35,9 @@ function TailReserveExample() {
     requestAnimationFrame(() => {
       viewportRef.current?.scrollToItem(userMessage.id, {
         align: 'head',
-        animation: ThreadPort.Animation.easeOutQuart(420),
+        animation: reducedMotion
+          ? { duration: 0 }
+          : ThreadPort.Animation.easeOutQuart(420),
       })
     })
   }

@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Composer,
+  createMessage,
   createTranscript,
+  type DemoMessage,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
@@ -9,11 +11,30 @@ import {
   Metrics,
   mountPage,
   ThreadPort,
+  useReducedMotion,
 } from '../shared'
 
 function MobileExample() {
-  const messages = useMemo(() => createTranscript(30), [])
+  const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
+  const reducedMotion = useReducedMotion()
+  const [messages, setMessages] = useState<DemoMessage[]>(() =>
+    createTranscript(30),
+  )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+
+  function commitMessage(value: string) {
+    const userMessage = createMessage('user', value)
+
+    setMessages((current) => [...current, userMessage])
+    requestAnimationFrame(() => {
+      viewportRef.current?.scrollToItem(userMessage.id, {
+        align: 'head',
+        animation: reducedMotion
+          ? { duration: 0 }
+          : ThreadPort.Animation.easeOutQuart(420),
+      })
+    })
+  }
 
   return (
     <ExamplePage
@@ -34,6 +55,7 @@ function MobileExample() {
             <span>Menu</span>
           </div>
           <ThreadPort.Viewport
+            ref={viewportRef}
             ariaLabel="Mobile virtualized transcript"
             className="exampleViewport"
             contentClassName="exampleContent"
@@ -50,7 +72,7 @@ function MobileExample() {
             virtualizerOptions={{ overscan: 8 }}
           />
           <ThreadPort.Overlay className="composerDock" placement="tail">
-            <Composer disabled />
+            <Composer onSubmit={commitMessage} />
           </ThreadPort.Overlay>
         </ThreadPort.Root>
       </div>

@@ -1,6 +1,9 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import {
+  Composer,
+  createMessage,
   createTranscript,
+  type DemoMessage,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
@@ -8,12 +11,30 @@ import {
   Metrics,
   mountPage,
   ThreadPort,
+  useReducedMotion,
 } from '../shared'
 
 function ControlsExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
-  const messages = useMemo(() => createTranscript(64), [])
+  const reducedMotion = useReducedMotion()
+  const [messages, setMessages] = useState<DemoMessage[]>(() =>
+    createTranscript(64),
+  )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+
+  function commitMessage(value: string) {
+    const userMessage = createMessage('user', value)
+
+    setMessages((current) => [...current, userMessage])
+    requestAnimationFrame(() => {
+      viewportRef.current?.scrollToItem(userMessage.id, {
+        align: 'head',
+        animation: reducedMotion
+          ? { duration: 0 }
+          : ThreadPort.Animation.easeOutQuart(420),
+      })
+    })
+  }
 
   return (
     <ExamplePage
@@ -44,7 +65,9 @@ function ControlsExample() {
             onClick={() =>
               viewportRef.current?.scrollToIndex(24, {
                 align: 'head',
-                animation: ThreadPort.Animation.easeOutQuart(420),
+                animation: reducedMotion
+                  ? { duration: 0 }
+                  : ThreadPort.Animation.easeOutQuart(420),
               })
             }
           >
@@ -55,7 +78,9 @@ function ControlsExample() {
             onClick={() =>
               viewportRef.current?.scrollToItem(messages[36]?.id ?? '', {
                 align: 'center',
-                animation: ThreadPort.Animation.easeOutCubic(420),
+                animation: reducedMotion
+                  ? { duration: 0 }
+                  : ThreadPort.Animation.easeOutCubic(420),
               })
             }
           >
@@ -80,9 +105,12 @@ function ControlsExample() {
           onStateChange={setState}
           renderItem={({ item }) => <MessageView message={item} />}
           role="log"
-          tailInset={32}
+          tailInset={96}
           virtualizerOptions={{ overscan: 8 }}
         />
+        <ThreadPort.Overlay className="composerDock" placement="tail">
+          <Composer onSubmit={commitMessage} />
+        </ThreadPort.Overlay>
       </ThreadPort.Root>
     </ExamplePage>
   )

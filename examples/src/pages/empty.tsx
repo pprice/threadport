@@ -1,18 +1,37 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   Composer,
+  createMessage,
   type DemoMessage,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
+  MessageView,
   Metrics,
   mountPage,
   ThreadPort,
+  useReducedMotion,
 } from '../shared'
 
 function EmptyExample() {
+  const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
+  const reducedMotion = useReducedMotion()
+  const [messages, setMessages] = useState<DemoMessage[]>([])
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
-  const messages: DemoMessage[] = []
+
+  function commitMessage(value: string) {
+    const userMessage = createMessage('user', value)
+
+    setMessages((current) => [...current, userMessage])
+    requestAnimationFrame(() => {
+      viewportRef.current?.scrollToItem(userMessage.id, {
+        align: 'head',
+        animation: reducedMotion
+          ? { duration: 0 }
+          : ThreadPort.Animation.easeOutQuart(420),
+      })
+    })
+  }
 
   return (
     <ExamplePage
@@ -28,6 +47,7 @@ function EmptyExample() {
     >
       <ThreadPort.Root className="demoFrame">
         <ThreadPort.Viewport
+          ref={viewportRef}
           ariaLabel="Empty virtualized transcript"
           className="exampleViewport"
           contentClassName="exampleContent"
@@ -37,24 +57,30 @@ function EmptyExample() {
           itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
-          renderItem={({ item }) => item.body}
+          renderItem={({ item }) => <MessageView message={item} />}
           role="log"
           tailInset={96}
         />
-        <ThreadPort.Overlay placement="fill">
-          <div className="emptyState">
-            <div>
-              <p className="eyebrow">Empty transcript</p>
-              <h2>Start with your own first-run state.</h2>
-              <p>
-                Threadport stays silent when there are no rows. Put onboarding,
-                examples, or starter actions wherever your product needs them.
-              </p>
+        {messages.length === 0 && (
+          <ThreadPort.Overlay placement="fill">
+            <div className="emptyState">
+              <div>
+                <p className="eyebrow">Empty transcript</p>
+                <h2>Start with your own first-run state.</h2>
+                <p>
+                  Threadport stays silent when there are no rows. Put
+                  onboarding, examples, or starter actions wherever your product
+                  needs them.
+                </p>
+              </div>
             </div>
-          </div>
-        </ThreadPort.Overlay>
+          </ThreadPort.Overlay>
+        )}
         <ThreadPort.Overlay className="composerDock" placement="tail">
-          <Composer disabled placeholder="Composer belongs to your app" />
+          <Composer
+            onSubmit={commitMessage}
+            placeholder="Composer belongs to your app"
+          />
         </ThreadPort.Overlay>
       </ThreadPort.Root>
     </ExamplePage>

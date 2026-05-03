@@ -1,5 +1,6 @@
 import {
   type FormEvent,
+  type KeyboardEvent,
   memo,
   type ReactNode,
   StrictMode,
@@ -25,7 +26,11 @@ type ExampleMeta = {
   description: string
   href: string
   id: string
+  integration: string[]
   label: string
+  ownedBy: 'host' | 'viewport'
+  scope: string
+  sourcePath: string
 }
 
 export const examples: ExampleMeta[] = [
@@ -34,42 +39,99 @@ export const examples: ExampleMeta[] = [
     label: 'Basic transcript',
     description: 'A bounded viewport with variable-height messages.',
     href: '/examples/basic/',
+    integration: [
+      'items',
+      'estimateSize',
+      'getItemKey',
+      'renderItem',
+      'tailInset',
+    ],
+    ownedBy: 'viewport',
+    scope: 'Rendering',
+    sourcePath: 'examples/src/pages/basic.tsx',
   },
   {
     id: 'streaming',
     label: 'Streaming response',
     description: 'Append content without forcing tail-follow behavior.',
     href: '/examples/streaming/',
+    integration: [
+      'ViewportHandle',
+      'scrollToItem',
+      'scrollToTail',
+      'onStateChange',
+      'useReducedMotion',
+    ],
+    ownedBy: 'host',
+    scope: 'Policy',
+    sourcePath: 'examples/src/pages/streaming.tsx',
   },
   {
     id: 'tail-reserve',
     label: 'Tail reserve',
     description: 'Start a new response with a screen of active space.',
     href: '/examples/tail-reserve/',
+    integration: [
+      'tailReserve',
+      'tailInset',
+      'scrollToItem',
+      'Overlay',
+      'Composer',
+    ],
+    ownedBy: 'viewport',
+    scope: 'Append',
+    sourcePath: 'examples/src/pages/tail-reserve.tsx',
   },
   {
     id: 'history',
     label: 'History prepend',
     description: 'Load older messages above while preserving the anchor.',
     href: '/examples/history/',
+    integration: [
+      'headReserve',
+      'preserveScrollOnPrepend',
+      'estimateSize',
+      'initialAnchor',
+    ],
+    ownedBy: 'viewport',
+    scope: 'History',
+    sourcePath: 'examples/src/pages/history.tsx',
   },
   {
     id: 'mobile',
     label: 'Mobile shell',
     description: 'Insets and overlays inside a phone-sized frame.',
     href: '/examples/mobile/',
+    integration: ['headInset', 'tailInset', 'Overlay', 'Root', 'Viewport'],
+    ownedBy: 'host',
+    scope: 'Chrome',
+    sourcePath: 'examples/src/pages/mobile.tsx',
   },
   {
     id: 'empty',
     label: 'No content',
     description: 'An empty viewport with integrator-owned empty state.',
     href: '/examples/empty/',
+    integration: ['items={[]}', 'Overlay fill', 'tailInset', 'renderItem'],
+    ownedBy: 'host',
+    scope: 'Empty',
+    sourcePath: 'examples/src/pages/empty.tsx',
   },
   {
     id: 'controls',
     label: 'Imperative controls',
     description: 'Scroll by head, tail, index, and item key.',
     href: '/examples/controls/',
+    integration: [
+      'ViewportHandle',
+      'scrollToHead',
+      'scrollToTail',
+      'scrollToIndex',
+      'scrollToItem',
+    ],
+    ownedBy: 'host',
+    scope: 'API',
+    sourcePath: 'examples/src/pages/controls.tsx',
   },
 ]
 
@@ -186,6 +248,7 @@ export const MessageView = memo(function MessageView({
       className={`message message-${message.role}`}
       data-message-id={message.id}
       data-message-role={message.role}
+      data-message-variant={message.variant}
     >
       {!isUser && (
         <div className="avatar">{message.role === 'system' ? 'S' : 'T'}</div>
@@ -232,28 +295,51 @@ export function ExamplePage({
   summary: string
   title: string
 }) {
+  const activeExample = examples.find((example) => example.id === activeId)
+
   return (
     <div className="siteRoot">
       <SiteHeader activeId={activeId} />
       <main className="exampleLayout">
-        <aside className="exampleIntro">
-          <p className="eyebrow">Example</p>
-          <h1>{title}</h1>
+        <section className="examplePanel" aria-labelledby={`${activeId}-title`}>
+          <a className="backLink" href="/">
+            Index
+          </a>
+          <p className="eyebrow">{activeExample?.scope ?? 'Example'}</p>
+          <h1 id={`${activeId}-title`}>{title}</h1>
           <p className="lede">{summary}</p>
           <ul className="noteList">
             {notes.map((note) => (
               <li key={note}>{note}</li>
             ))}
           </ul>
-        </aside>
+          {activeExample && (
+            <section className="integrationPanel" aria-label="Integration">
+              <div className="integrationHeader">
+                <span>Source</span>
+                <code>{activeExample.sourcePath}</code>
+              </div>
+              <div>
+                <p>Inspect</p>
+                <ul className="integrationList">
+                  {activeExample.integration.map((item) => (
+                    <li key={item}>
+                      <code>{item}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+          {aside && (
+            <aside className="demoAside" aria-label={`${title} controls`}>
+              {aside}
+            </aside>
+          )}
+        </section>
         <section className="demoStage" aria-label={`${title} demo`}>
           {children}
         </section>
-        {aside && (
-          <aside className="demoAside" aria-label={`${title} controls`}>
-            {aside}
-          </aside>
-        )}
       </main>
     </div>
   )
@@ -263,6 +349,7 @@ export function SiteHeader({ activeId }: { activeId?: string }) {
   return (
     <header className="siteHeader">
       <a className="brand" href="/">
+        <span className="brandMark" aria-hidden="true" />
         Threadport
       </a>
       <nav aria-label="Examples">
@@ -276,6 +363,7 @@ export function SiteHeader({ activeId }: { activeId?: string }) {
           </a>
         ))}
       </nav>
+      <code>npm i threadport</code>
     </header>
   )
 }
@@ -323,11 +411,25 @@ export function Composer({
     setValue('')
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (
+      event.key !== 'Enter' ||
+      event.shiftKey ||
+      event.nativeEvent.isComposing
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    event.currentTarget.form?.requestSubmit()
+  }
+
   return (
     <form className="composer" onSubmit={handleSubmit}>
       <textarea
         aria-label="Message"
         disabled={disabled}
+        onKeyDown={handleKeyDown}
         onChange={(event) => setValue(event.target.value)}
         placeholder={placeholder}
         rows={1}
