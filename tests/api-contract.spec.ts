@@ -140,11 +140,14 @@ test('imperative scroll methods target head, index, item key, and tail', async (
 
   let item = await readItemGeometry(page, 'item-0')
 
-  expect(item.exists).toBe(true)
+  await expect
+    .poll(async () => {
+      item = await readItemGeometry(page, 'item-0')
+
+      return item.offsetFromViewportHead ?? Number.POSITIVE_INFINITY
+    })
+    .toBeLessThanOrEqual(34)
   expect(item.offsetFromViewportHead ?? -1).toBeGreaterThanOrEqual(20)
-  expect(item.offsetFromViewportHead ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
-    34,
-  )
 
   await page.getByTestId('api-scroll-index').click()
   await expect

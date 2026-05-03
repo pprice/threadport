@@ -1,8 +1,4 @@
-import {
-  useVirtualizer,
-  type ReactVirtualizerOptions,
-  type VirtualItem,
-} from '@tanstack/react-virtual'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   forwardRef,
   useCallback,
@@ -12,11 +8,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
   type ForwardedRef,
   type ReactElement,
-  type ReactNode,
-  type Ref,
   type RefAttributes,
 } from 'react'
 import {
@@ -24,152 +17,33 @@ import {
   useChatViewportFrameRegistration,
 } from './ChatViewportFrame'
 import {
-  easeOutQuartCurve,
-  type ChatScrollAnimation,
-} from './easing'
-
-export type ChatItemKey = string | number
-export type ChatScrollAlign = 'head' | 'center' | 'tail' | 'auto'
-export type ChatScrollDirection = 'head' | 'tail' | null
-export type { ChatScrollAnimation, ChatScrollEasing } from './easing'
-
-export type ChatScrollToItemOptions = {
-  align?: ChatScrollAlign
-  animation?: ChatScrollAnimation
-}
-
-export type ChatViewportState = {
-  distanceFromHead: number
-  distanceFromTail: number
-  isAtHead: boolean
-  isAtTail: boolean
-  isScrolling: boolean
-  scrollbarInlineSize: number
-  scrollOffset: number
-  scrollSize: number
-  viewportSize: number
-  scrollDirection: ChatScrollDirection
-  totalItems: number
-  virtualItems: number
-}
-
-export type ChatTailReserveMetrics = {
-  headInset: number
-  headReserve: number
-  tailInset: number
-  viewportSize: number
-}
-
-export type ChatTailReserveOptions = {
-  className?: string
-  enabled?: boolean
-  minHeight?: number | ((metrics: ChatTailReserveMetrics) => number)
-  style?: CSSProperties
-}
-
-export type ChatTailReserveConfig = boolean | ChatTailReserveOptions
-
-type ChatOwnedVirtualizerOption =
-  | 'count'
-  | 'enabled'
-  | 'estimateSize'
-  | 'getItemKey'
-  | 'getScrollElement'
-  | 'horizontal'
-  | 'indexAttribute'
-  | 'initialOffset'
-  | 'isRtl'
-  | 'laneAssignmentMode'
-  | 'lanes'
-  | 'observeElementOffset'
-  | 'observeElementRect'
-  | 'onChange'
-  | 'paddingEnd'
-  | 'paddingStart'
-  | 'scrollMargin'
-  | 'scrollPaddingEnd'
-  | 'scrollPaddingStart'
-  | 'scrollToFn'
-
-export type ChatVirtualizerOptions = Partial<
-  Omit<
-    ReactVirtualizerOptions<HTMLDivElement, HTMLDivElement>,
-    ChatOwnedVirtualizerOption
-  >
->
-
-export type ChatVirtualViewportHandle = {
-  getScrollElement: () => HTMLDivElement | null
-  getState: () => ChatViewportState
-  measure: () => void
-  scrollToHead: (options?: ChatScrollAnimation) => void
-  scrollToIndex: (index: number, options?: ChatScrollToItemOptions) => void
-  scrollToItem: (
-    key: ChatItemKey,
-    options?: ChatScrollToItemOptions,
-  ) => void
-  scrollToTail: (options?: ChatScrollAnimation) => void
-  stopScrollAnimation: () => void
-}
-
-export type ChatVirtualRenderArgs<TItem> = {
-  item: TItem
-  index: number
-  itemKey: ChatItemKey
-  virtualItem: VirtualItem
-}
-
-export type ChatVirtualViewportProps<TItem> = {
-  items: readonly TItem[]
-  getItemKey: (item: TItem, index: number) => ChatItemKey
-  estimateSize: (item: TItem, index: number) => number
-  renderItem: (args: ChatVirtualRenderArgs<TItem>) => ReactNode
-  ariaLabel?: string
-  atHeadThreshold?: number
-  atTailThreshold?: number
-  className?: string
-  contentClassName?: string
-  headInset?: number
-  headReserve?: number
-  initialAnchor?: 'head' | 'tail'
-  itemClassName?: string
-  itemGap?: number
-  onStateChange?: (state: ChatViewportState) => void
-  overscan?: number
-  preserveScrollOnPrepend?: boolean
-  role?: string
-  style?: CSSProperties
-  tailInset?: number
-  tailReserve?: ChatTailReserveConfig
-  scrollAnimation?: ChatScrollAnimation
-  virtualizerOptions?: ChatVirtualizerOptions
-}
+  DEFAULT_AT_HEAD_THRESHOLD,
+  DEFAULT_AT_TAIL_THRESHOLD,
+  DEFAULT_ESTIMATE,
+} from './constants'
+import { isTailReserveEnabled } from './TailReserve'
+import { VirtualRows } from './VirtualRows'
+import {
+  animateScrollTop,
+  resolveScrollAnimation,
+  type ActiveScrollAnimation,
+} from './scrollAnimation'
+import { useTailReserveContentMeasurement } from './useTailReserveContentMeasurement'
+import { useViewportStateEmitter } from './useViewportStateEmitter'
+import type {
+  ChatItemKey,
+  ChatScrollAlign,
+  ChatScrollAnimation,
+  ChatScrollDirection,
+  ChatScrollToItemOptions,
+  ChatViewportState,
+  ChatVirtualViewportHandle,
+  ChatVirtualViewportProps,
+} from './ChatVirtualViewport.types'
 
 type AnchorSnapshot = {
   itemKey: ChatItemKey
   scrollDelta: number
-}
-
-type ActiveScrollAnimation = {
-  cancel: () => void
-}
-
-type TailReserveProps = {
-  active: boolean
-  children: ReactNode
-  className?: string
-  contentRef?: Ref<HTMLDivElement>
-  minHeight: number
-  style?: CSSProperties
-}
-
-const DEFAULT_ESTIMATE = 160
-const DEFAULT_SCROLL_DURATION = 460
-const DEFAULT_AT_HEAD_THRESHOLD = 16
-const DEFAULT_AT_TAIL_THRESHOLD = 36
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
 }
 
 function toVirtualAlign(align: ChatScrollAlign) {
@@ -182,160 +56,6 @@ function toVirtualAlign(align: ChatScrollAlign) {
   }
 
   return align
-}
-
-function isTailReserveEnabled(tailReserve: ChatTailReserveConfig | undefined) {
-  if (tailReserve === undefined) {
-    return false
-  }
-
-  if (typeof tailReserve === 'boolean') {
-    return tailReserve
-  }
-
-  return tailReserve.enabled ?? true
-}
-
-function TailReserve({
-  active,
-  children,
-  className,
-  contentRef,
-  minHeight,
-  style,
-}: TailReserveProps) {
-  return (
-    <div
-      className={className}
-      data-tail-reserve={active ? 'active' : undefined}
-      style={{
-        ...style,
-        minHeight: active ? minHeight : style?.minHeight,
-      }}
-    >
-      <div ref={contentRef}>{children}</div>
-    </div>
-  )
-}
-
-function prefersReducedMotion() {
-  if (typeof window === 'undefined') {
-    return false
-  }
-
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
-function shallowEqualState(
-  previous: ChatViewportState | null,
-  next: ChatViewportState,
-) {
-  return (
-    previous !== null &&
-    previous.distanceFromHead === next.distanceFromHead &&
-    previous.distanceFromTail === next.distanceFromTail &&
-    previous.isAtHead === next.isAtHead &&
-    previous.isAtTail === next.isAtTail &&
-    previous.isScrolling === next.isScrolling &&
-    previous.scrollbarInlineSize === next.scrollbarInlineSize &&
-    previous.scrollOffset === next.scrollOffset &&
-    previous.scrollSize === next.scrollSize &&
-    previous.viewportSize === next.viewportSize &&
-    previous.scrollDirection === next.scrollDirection &&
-    previous.totalItems === next.totalItems &&
-    previous.virtualItems === next.virtualItems
-  )
-}
-
-function animateScrollTop(
-  element: HTMLElement,
-  getTargetTop: () => number,
-  animation: Required<ChatScrollAnimation>,
-  onDone: () => void,
-): ActiveScrollAnimation {
-  const { duration, easing } = animation
-  const startTop = element.scrollTop
-
-  function readTargetTop() {
-    const maxTop = Math.max(0, element.scrollHeight - element.clientHeight)
-
-    return clamp(getTargetTop(), 0, maxTop)
-  }
-
-  const initialTarget = readTargetTop()
-
-  if (
-    duration <= 0 ||
-    Math.abs(initialTarget - startTop) < 1 ||
-    prefersReducedMotion()
-  ) {
-    element.scrollTop = initialTarget
-    onDone()
-
-    return { cancel: () => undefined }
-  }
-
-  let animationFrame = 0
-  let cancelled = false
-  let finished = false
-  const startTime = performance.now()
-  const cancelEvents = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const
-
-  function cleanup() {
-    cancelEvents.forEach((eventName) => {
-      element.removeEventListener(eventName, cancelFromUser)
-    })
-  }
-
-  function finish() {
-    if (finished) {
-      return
-    }
-
-    finished = true
-    cancelAnimationFrame(animationFrame)
-    cleanup()
-    onDone()
-  }
-
-  function cancel() {
-    if (cancelled) {
-      return
-    }
-
-    cancelled = true
-    finish()
-  }
-
-  function cancelFromUser() {
-    cancel()
-  }
-
-  function frame(now: number) {
-    if (cancelled) {
-      return
-    }
-
-    const progress = clamp((now - startTime) / duration, 0, 1)
-    const targetTop = readTargetTop()
-    element.scrollTop = startTop + (targetTop - startTop) * easing(progress)
-
-    if (progress < 1) {
-      animationFrame = requestAnimationFrame(frame)
-      return
-    }
-
-    element.scrollTop = readTargetTop()
-    finish()
-  }
-
-  cancelEvents.forEach((eventName) => {
-    element.addEventListener(eventName, cancelFromUser, { passive: true })
-  })
-
-  animationFrame = requestAnimationFrame(frame)
-
-  return { cancel }
 }
 
 function ChatVirtualViewportInner<TItem>(
@@ -377,13 +97,9 @@ function ChatVirtualViewportInner<TItem>(
   const didInitialScrollRef = useRef(false)
   const lastScrollTopRef = useRef(0)
   const scrollDirectionRef = useRef<ChatScrollDirection>(null)
-  const lastStateRef = useRef<ChatViewportState | null>(null)
-  const stateFrameRef = useRef<number | null>(null)
-  const settledStateFrameRef = useRef<number | null>(null)
   const requestStateUpdateRef = useRef<(() => void) | null>(null)
   const activeTailReserveKeyRef = useRef<ChatItemKey | null>(null)
   const measuredTailReserveKeyRef = useRef<ChatItemKey | null>(null)
-  const tailReserveContentRef = useRef<HTMLDivElement | null>(null)
   const tailReserveContentSizeRef = useRef(0)
   const tailReserveMinHeightRef = useRef(0)
   const [reservedTailKey, setReservedTailKey] =
@@ -414,21 +130,6 @@ function ChatVirtualViewportInner<TItem>(
     animationRef.current?.cancel()
     animationRef.current = null
     programmaticScrollRef.current = false
-  }
-
-  function resolveScrollAnimation(
-    animation?: ChatScrollAnimation,
-  ): Required<ChatScrollAnimation> {
-    return {
-      duration:
-        animation?.duration ??
-        scrollAnimation?.duration ??
-        DEFAULT_SCROLL_DURATION,
-      easing:
-        animation?.easing ??
-        scrollAnimation?.easing ??
-        easeOutQuartCurve,
-    }
   }
 
   function getUnconsumedTailReserve() {
@@ -504,44 +205,11 @@ function ChatVirtualViewportInner<TItem>(
     }
   }
 
-  function emitState() {
-    if (!onStateChange) {
-      return
-    }
-
-    const next = readState()
-
-    if (shallowEqualState(lastStateRef.current, next)) {
-      return
-    }
-
-    lastStateRef.current = next
-    onStateChange(next)
-  }
-
-  function scheduleStateEmit() {
-    if (!onStateChange || stateFrameRef.current !== null) {
-      return
-    }
-
-    stateFrameRef.current = requestAnimationFrame(() => {
-      stateFrameRef.current = null
-      emitState()
-    })
-  }
-
-  function scheduleSettledStateEmit() {
-    if (!onStateChange || settledStateFrameRef.current !== null) {
-      return
-    }
-
-    settledStateFrameRef.current = requestAnimationFrame(() => {
-      settledStateFrameRef.current = requestAnimationFrame(() => {
-        settledStateFrameRef.current = null
-        emitState()
-      })
-    })
-  }
+  const {
+    emitState,
+    scheduleSettledStateEmit,
+    scheduleStateEmit,
+  } = useViewportStateEmitter({ onStateChange, readState })
 
   requestStateUpdateRef.current = () => {
     emitState()
@@ -595,7 +263,7 @@ function ChatVirtualViewportInner<TItem>(
     const activeAnimation = animateScrollTop(
       element,
       getTargetTop,
-      resolveScrollAnimation(options),
+      resolveScrollAnimation(options, scrollAnimation),
       () => {
         done = true
 
@@ -800,14 +468,6 @@ function ChatVirtualViewportInner<TItem>(
   useEffect(() => {
     return () => {
       stopScrollAnimation()
-
-      if (stateFrameRef.current !== null) {
-        cancelAnimationFrame(stateFrameRef.current)
-      }
-
-      if (settledStateFrameRef.current !== null) {
-        cancelAnimationFrame(settledStateFrameRef.current)
-      }
     }
   }, [])
 
@@ -914,50 +574,14 @@ function ChatVirtualViewportInner<TItem>(
     [],
   )
 
-  useLayoutEffect(() => {
-    tailReserveContentRef.current = tailReserveContentElement
-
-    if (measuredTailReserveKeyRef.current !== activeReservedTailKey) {
-      measuredTailReserveKeyRef.current = activeReservedTailKey
-      tailReserveContentSizeRef.current = 0
-    }
-
-    if (activeReservedTailKey === null) {
-      tailReserveContentSizeRef.current = 0
-      scheduleStateEmit()
-      return
-    }
-
-    const element = tailReserveContentElement
-
-    if (!element) {
-      scheduleStateEmit()
-      return
-    }
-
-    const measuredElement: HTMLDivElement = element
-
-    function measureTailReserveContent() {
-      const measuredSize = measuredElement.getBoundingClientRect().height
-
-      if (
-        Math.abs(measuredSize - tailReserveContentSizeRef.current) < 0.5
-      ) {
-        return
-      }
-
-      tailReserveContentSizeRef.current = measuredSize
-      scheduleStateEmit()
-    }
-
-    measureTailReserveContent()
-
-    const observer = new ResizeObserver(measureTailReserveContent)
-
-    observer.observe(measuredElement)
-
-    return () => observer.disconnect()
-  }, [activeReservedTailKey, tailReserveContentElement, tailReserveMinHeight])
+  useTailReserveContentMeasurement({
+    activeReservedTailKey,
+    measuredTailReserveKeyRef,
+    scheduleStateEmit,
+    tailReserveContentElement,
+    tailReserveContentSizeRef,
+    tailReserveMinHeight,
+  })
 
   return (
     <div
@@ -972,61 +596,21 @@ function ChatVirtualViewportInner<TItem>(
         ...style,
       }}
     >
-      <div
-        className={contentClassName}
-        style={{
-          height: totalSize,
-          position: 'relative',
-          width: '100%',
-        }}
-      >
-        {virtualItems.map((virtualItem) => {
-          const item = items[virtualItem.index]
-
-          if (item === undefined) {
-            return null
-          }
-
-          const itemKey = getItemKey(item, virtualItem.index)
-          const hasActiveTailReserve =
-            tailReserveEnabled &&
-            activeReservedTailKey === itemKey &&
-            virtualItem.index === items.length - 1
-
-          return (
-            <div
-              key={itemKey}
-              ref={virtualizer.measureElement}
-              className={itemClassName}
-              data-index={virtualItem.index}
-              style={{
-                left: 0,
-                position: 'absolute',
-                top: 0,
-                transform: `translateY(${virtualItem.start}px)`,
-                width: '100%',
-              }}
-            >
-              <TailReserve
-                active={hasActiveTailReserve}
-                className={tailReserveOptions?.className}
-                contentRef={
-                  hasActiveTailReserve ? setActiveTailReserveContent : undefined
-                }
-                minHeight={tailReserveMinHeight}
-                style={tailReserveOptions?.style}
-              >
-                {renderItem({
-                  item,
-                  index: virtualItem.index,
-                  itemKey,
-                  virtualItem,
-                })}
-              </TailReserve>
-            </div>
-          )
-        })}
-      </div>
+      <VirtualRows
+        activeReservedTailKey={activeReservedTailKey}
+        contentClassName={contentClassName}
+        getItemKey={getItemKey}
+        itemClassName={itemClassName}
+        items={items}
+        measureElement={virtualizer.measureElement}
+        renderItem={renderItem}
+        setActiveTailReserveContent={setActiveTailReserveContent}
+        tailReserveEnabled={tailReserveEnabled}
+        tailReserveMinHeight={tailReserveMinHeight}
+        tailReserveOptions={tailReserveOptions}
+        totalSize={totalSize}
+        virtualItems={virtualItems}
+      />
     </div>
   )
 }
