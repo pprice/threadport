@@ -26,4 +26,11 @@ export {
   type ChatViewportOverlayPlacement,
   type ChatViewportOverlayProps,
 } from './ChatViewportFrame'
-export { easeOutCubic, easeOutQuart } from './easing'
+export {
+  easeInOutCubic,
+  easeOutCubic,
+  easeOutQuad,
+  easeOutQuart,
+  easeOutQuint,
+  linear,
+} from './easing'

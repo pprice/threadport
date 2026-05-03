@@ -18,6 +18,7 @@ import {
   ChatViewportFrame,
   ChatViewportOverlay,
   ChatVirtualViewport,
+  easeOutCubic,
   easeOutQuart,
   type ChatVirtualViewportHandle,
 } from 'threadport'
@@ -39,6 +40,7 @@ export function Chat({ messages }: { messages: Message[] }) {
         headInset={64}
         tailInset={168}
         initialAnchor="tail"
+        scrollAnimation={easeOutCubic(420)}
         tailReserve
         virtualizerOptions={{ overscan: 12 }}
       />
@@ -48,8 +50,7 @@ export function Chat({ messages }: { messages: Message[] }) {
           onSubmit={(messageId) => {
             viewportRef.current?.scrollToItem(messageId, {
               align: 'head',
-              duration: 520,
-              easing: easeOutQuart,
+              animation: easeOutQuart(520),
             })
           }}
         />
@@ -91,6 +92,7 @@ export function Chat({ messages }: { messages: Message[] }) {
 | `overscan` | `number` | No | Extra rows rendered outside the viewport. |
 | `preserveScrollOnPrepend` | `boolean` | No | Keeps the visible anchor stable when items are inserted at the head. |
 | `role` | `string` | No | ARIA role for the scroll element. |
+| `scrollAnimation` | `ChatScrollAnimation` | No | Default animation for imperative scroll commands. |
 | `style` | `CSSProperties` | No | Inline style for the scroll element. |
 | `tailInset` | `number` | No | Persistent overlap at the tail, usually composer space. |
 | `tailReserve` | `boolean \| ChatTailReserveOptions` | No | Gives the active appended tail item a viewport-sized minimum height. |
@@ -106,9 +108,15 @@ Imperative handle:
 
 - `scrollToHead(options)`
 - `scrollToTail(options)`
-- `scrollToIndex(index, { align, ...options })`
-- `scrollToItem(key, { align, ...options })`
+- `scrollToIndex(index, { align, animation })`
+- `scrollToItem(key, { align, animation })`
 - `measure()`, `getState()`, `getScrollElement()`, `stopScrollAnimation()`
+
+Animation factories:
+
+- `linear(duration)`
+- `easeOutQuad(duration)`, `easeOutCubic(duration)`, `easeOutQuart(duration)`, `easeOutQuint(duration)`
+- `easeInOutCubic(duration)`
 
 Frame helpers:
 

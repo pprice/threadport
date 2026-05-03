@@ -91,8 +91,10 @@ export function ApiHarness() {
           type="button"
           onClick={() =>
             viewportRef.current?.scrollToIndex(20, {
+              animation: {
+                duration: 0,
+              },
               align: 'head',
-              duration: 0,
             })
           }
         >
@@ -103,8 +105,10 @@ export function ApiHarness() {
           type="button"
           onClick={() =>
             viewportRef.current?.scrollToItem('item-35', {
+              animation: {
+                duration: 0,
+              },
               align: 'head',
-              duration: 0,
             })
           }
         >

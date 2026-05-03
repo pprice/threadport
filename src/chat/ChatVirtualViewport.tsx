@@ -23,20 +23,19 @@ import {
   readScrollbarInlineSize,
   useChatViewportFrameRegistration,
 } from './ChatViewportFrame'
-import { easeOutQuart } from './easing'
+import {
+  easeOutQuartCurve,
+  type ChatScrollAnimation,
+} from './easing'
 
 export type ChatItemKey = string | number
 export type ChatScrollAlign = 'head' | 'center' | 'tail' | 'auto'
 export type ChatScrollDirection = 'head' | 'tail' | null
-export type ChatScrollEasing = (t: number) => number
+export type { ChatScrollAnimation, ChatScrollEasing } from './easing'
 
-export type ChatScrollAnimation = {
-  duration?: number
-  easing?: ChatScrollEasing
-}
-
-export type ChatScrollToItemOptions = ChatScrollAnimation & {
+export type ChatScrollToItemOptions = {
   align?: ChatScrollAlign
+  animation?: ChatScrollAnimation
 }
 
 export type ChatViewportState = {
@@ -142,6 +141,7 @@ export type ChatVirtualViewportProps<TItem> = {
   style?: CSSProperties
   tailInset?: number
   tailReserve?: ChatTailReserveConfig
+  scrollAnimation?: ChatScrollAnimation
   virtualizerOptions?: ChatVirtualizerOptions
 }
 
@@ -250,11 +250,10 @@ function shallowEqualState(
 function animateScrollTop(
   element: HTMLElement,
   getTargetTop: () => number,
-  options: ChatScrollAnimation | undefined,
+  animation: Required<ChatScrollAnimation>,
   onDone: () => void,
 ): ActiveScrollAnimation {
-  const duration = options?.duration ?? DEFAULT_SCROLL_DURATION
-  const easing = options?.easing ?? easeOutQuart
+  const { duration, easing } = animation
   const startTop = element.scrollTop
 
   function readTargetTop() {
@@ -362,6 +361,7 @@ function ChatVirtualViewportInner<TItem>(
     style,
     tailInset = 0,
     tailReserve,
+    scrollAnimation,
     virtualizerOptions,
   }: ChatVirtualViewportProps<TItem>,
   forwardedRef: ForwardedRef<ChatVirtualViewportHandle>,
@@ -414,6 +414,21 @@ function ChatVirtualViewportInner<TItem>(
     animationRef.current?.cancel()
     animationRef.current = null
     programmaticScrollRef.current = false
+  }
+
+  function resolveScrollAnimation(
+    animation?: ChatScrollAnimation,
+  ): Required<ChatScrollAnimation> {
+    return {
+      duration:
+        animation?.duration ??
+        scrollAnimation?.duration ??
+        DEFAULT_SCROLL_DURATION,
+      easing:
+        animation?.easing ??
+        scrollAnimation?.easing ??
+        easeOutQuartCurve,
+    }
   }
 
   function getUnconsumedTailReserve() {
@@ -577,28 +592,33 @@ function ChatVirtualViewportInner<TItem>(
     let done = false
     const animationId = scrollAnimationIdRef.current + 1
     scrollAnimationIdRef.current = animationId
-    const animation = animateScrollTop(element, getTargetTop, options, () => {
-      done = true
+    const activeAnimation = animateScrollTop(
+      element,
+      getTargetTop,
+      resolveScrollAnimation(options),
+      () => {
+        done = true
 
-      if (scrollAnimationIdRef.current !== animationId) {
-        return
-      }
+        if (scrollAnimationIdRef.current !== animationId) {
+          return
+        }
 
-      programmaticScrollRef.current = false
-      animationRef.current = null
-      captureAnchor()
-      scheduleStateEmit()
-      onSettled?.()
-    })
+        programmaticScrollRef.current = false
+        animationRef.current = null
+        captureAnchor()
+        scheduleStateEmit()
+        onSettled?.()
+      },
+    )
 
     if (!done) {
-      animationRef.current = animation
+      animationRef.current = activeAnimation
     }
   }
 
   function scrollToIndex(
     index: number,
-    { align = 'head', duration, easing }: ChatScrollToItemOptions = {},
+    { align = 'head', animation }: ChatScrollToItemOptions = {},
   ) {
     if (index < 0 || index >= items.length) {
       return
@@ -609,7 +629,7 @@ function ChatVirtualViewportInner<TItem>(
         virtualizer.getOffsetForIndex(index, toVirtualAlign(align))?.[0] ??
         scrollRef.current?.scrollTop ??
         0,
-      { duration, easing },
+      animation,
     )
   }
 

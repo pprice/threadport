@@ -59,6 +59,10 @@ const examples: ExampleConfig[] = [
   },
 ]
 
+const CONTROL_SCROLL_ANIMATION = easeOutCubic(420)
+const MESSAGE_IN_ANIMATION = easeOutQuart(560)
+const TAIL_FOLLOW_ANIMATION = easeOutCubic(360)
+
 const assistantBodies = [
   'The simplest reliable chat scroller keeps virtualization separate from the composer. The viewport exposes scroll commands and state. The shell decides when to show controls.',
   'For variable content, every row is measured after paint. Estimates only get us close enough to place the item before the real height is known.',
@@ -244,8 +248,7 @@ const DemoMessageView = memo(function DemoMessageView({
   if (event.type === 'human-message') {
     viewport.scrollToItem(event.id, {
       align: 'head',
-      duration: 560,
-      easing: easeOutQuart,
+      animation: easeOutQuart(560),
     })
   }
 }`}</code>
@@ -372,10 +375,7 @@ export function App() {
 
     if (viewportState?.isAtTail) {
       requestAnimationFrame(() => {
-        viewportRef.current?.scrollToTail({
-          duration: 360,
-          easing: easeOutCubic,
-        })
+        viewportRef.current?.scrollToTail(TAIL_FOLLOW_ANIMATION)
       })
     }
   }
@@ -413,8 +413,7 @@ export function App() {
     const frame = requestAnimationFrame(() => {
       viewportRef.current?.scrollToItem(pendingScrollKey, {
         align: 'head',
-        duration: 560,
-        easing: easeOutQuart,
+        animation: MESSAGE_IN_ANIMATION,
       })
       setPendingScrollKey(null)
     })
@@ -476,12 +475,7 @@ export function App() {
           <button
             data-testid="scroll-to-top"
             type="button"
-            onClick={() =>
-              viewportRef.current?.scrollToHead({
-                duration: 420,
-                easing: easeOutCubic,
-              })
-            }
+            onClick={() => viewportRef.current?.scrollToHead()}
           >
             Scroll to top
           </button>
@@ -548,12 +542,7 @@ export function App() {
           <button
             data-testid="header-jump-bottom"
             type="button"
-            onClick={() =>
-              viewportRef.current?.scrollToTail({
-                duration: 420,
-                easing: easeOutCubic,
-              })
-            }
+            onClick={() => viewportRef.current?.scrollToTail()}
           >
             Jump bottom
           </button>
@@ -589,6 +578,7 @@ export function App() {
             overscan={12}
             renderItem={({ item }) => <DemoMessageView message={item} />}
             role="log"
+            scrollAnimation={CONTROL_SCROLL_ANIMATION}
             tailInset={tailInset}
             tailReserve={{ className: 'tailReserve' }}
           />
@@ -619,12 +609,7 @@ export function App() {
                 className="floatingJump"
                 data-testid="jump-to-bottom"
                 type="button"
-                onClick={() =>
-                  viewportRef.current?.scrollToTail({
-                    duration: 420,
-                    easing: easeOutCubic,
-                  })
-                }
+                onClick={() => viewportRef.current?.scrollToTail()}
               >
                 Jump to bottom
               </button>
