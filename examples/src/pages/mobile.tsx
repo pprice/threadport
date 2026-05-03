@@ -4,6 +4,7 @@ import {
   createGptExchange,
   createTranscript,
   type DemoMessage,
+  EXAMPLE_ITEM_GAP,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
@@ -61,6 +62,7 @@ function MobileExample() {
             getItemKey={getMessageKey}
             headInset={76}
             initialAnchor="tail"
+            itemGap={EXAMPLE_ITEM_GAP}
             itemClassName="exampleRow"
             items={messages}
             onStateChange={setState}

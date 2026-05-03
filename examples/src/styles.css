@@ -836,7 +836,7 @@ h1 {
 .message {
   display: flex;
   gap: var(--space-3);
-  padding: var(--space-4) 0;
+  padding: 0;
 }
 
 .message-user {

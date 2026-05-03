@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   createMessage,
   type DemoMessage,
+  EXAMPLE_ITEM_GAP,
   estimateMessageSize,
   examples,
   getMessageKey,
@@ -172,6 +173,7 @@ function Home() {
                 getItemKey={getMessageKey}
                 headInset={28}
                 initialAnchor="tail"
+                itemGap={EXAMPLE_ITEM_GAP}
                 itemClassName="exampleRow"
                 items={previewMessages}
                 renderItem={({ item }) => <MessageView message={item} />}

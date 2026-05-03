@@ -5,6 +5,7 @@ import {
   createOlderBatch,
   createTranscript,
   type DemoMessage,
+  EXAMPLE_ITEM_GAP,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
@@ -80,6 +81,7 @@ function PrependExample() {
           headInset={28}
           headReserve={headReserve}
           initialAnchor="tail"
+          itemGap={EXAMPLE_ITEM_GAP}
           itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}

@@ -5,6 +5,7 @@ import {
   createOlderBatch,
   createTranscript,
   type DemoMessage,
+  EXAMPLE_ITEM_GAP,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
@@ -128,6 +129,7 @@ function DataLoadingExample() {
           headInset={78}
           headReserve={headReserve}
           initialAnchor="tail"
+          itemGap={EXAMPLE_ITEM_GAP}
           itemClassName="exampleRow"
           items={messages}
           onStateChange={handleStateChange}

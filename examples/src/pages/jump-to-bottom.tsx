@@ -5,6 +5,7 @@ import {
   createMessage,
   createTranscript,
   type DemoMessage,
+  EXAMPLE_ITEM_GAP,
   ExamplePage,
   estimateMessageSize,
   getMessageKey,
@@ -100,6 +101,7 @@ function JumpToBottomExample() {
           getItemKey={getMessageKey}
           headInset={28}
           initialAnchor="tail"
+          itemGap={EXAMPLE_ITEM_GAP}
           itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}

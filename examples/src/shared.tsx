@@ -16,6 +16,8 @@ import './styles.css'
 
 export { ThreadPort }
 
+export const EXAMPLE_ITEM_GAP = 28
+
 export type DemoMessage = {
   body: string
   estimate: number
