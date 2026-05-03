@@ -113,11 +113,7 @@ function LongResponseExample() {
           renderItem={({ item }) => <MessageView message={item} />}
           role="log"
           tailInset={108}
-          tailReserve={{
-            className: 'tailReserve longTailReserve',
-            minHeight: ({ tailInset, viewportSize }) =>
-              Math.max(360, viewportSize - tailInset),
-          }}
+          tailReserve={{ className: 'tailReserve longTailReserve' }}
           virtualizerOptions={{ overscan: 8 }}
         />
         <ThreadPort.Overlay className="composerDock" placement="tail">

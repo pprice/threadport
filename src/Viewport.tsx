@@ -23,6 +23,11 @@ import {
   resolveScrollAnimation,
 } from './internal/scrollAnimation'
 import { isTailReserveEnabled } from './internal/TailReserve'
+import {
+  resolveMaxScrollTop,
+  resolveTailReserveMinHeight,
+  resolveUnconsumedTailReserve,
+} from './internal/tailReserveCalculation'
 import { useTailReserveContentMeasurement } from './internal/useTailReserveContentMeasurement'
 import { useViewportStateEmitter } from './internal/useViewportStateEmitter'
 import { VirtualRows } from './internal/VirtualRows'
@@ -100,6 +105,8 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const scrollbarInlineSizeRef = useRef(0)
   const tailReserveContentSizeRef = useRef(0)
   const tailReserveMinHeightRef = useRef(0)
+  const tailReserveConsumedBeforeTailRef = useRef(0)
+  const tailReserveHeadKeyRef = useRef<ItemKey | null>(null)
   const [reservedTailKey, setReservedTailKey] = useState<ItemKey | null>(null)
   const [tailReserveContentElement, setTailReserveContentElement] =
     useState<HTMLDivElement | null>(null)
@@ -129,15 +136,13 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     programmaticScrollRef.current = false
   }
 
-  function getUnconsumedTailReserve() {
-    if (!tailReserveEnabled || activeTailReserveKeyRef.current === null) {
-      return 0
-    }
-
-    return Math.max(
-      0,
-      tailReserveMinHeightRef.current - tailReserveContentSizeRef.current,
-    )
+  function readUnconsumedTailReserve() {
+    return resolveUnconsumedTailReserve({
+      activeTailReserveKey: activeTailReserveKeyRef.current,
+      contentSize: tailReserveContentSizeRef.current,
+      enabled: tailReserveEnabled,
+      minHeight: tailReserveMinHeightRef.current,
+    })
   }
 
   function getMaxScrollTop() {
@@ -147,34 +152,25 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       return 0
     }
 
-    return Math.max(
-      0,
-      element.scrollHeight - getUnconsumedTailReserve() - element.clientHeight,
-    )
+    return resolveMaxScrollTop({
+      scrollSize: element.scrollHeight,
+      unconsumedTailReserve: readUnconsumedTailReserve(),
+      viewportSize: element.clientHeight,
+    })
   }
 
-  function getTailReserveMinHeight() {
-    const explicitMinHeight = tailReserveOptions?.minHeight
+  function readTailReserveMinHeight(consumedBeforeTail: number) {
     const viewportSize =
       scrollRef.current?.clientHeight ?? virtualizer.scrollRect?.height ?? 0
 
-    if (typeof explicitMinHeight === 'number') {
-      return Math.max(0, explicitMinHeight)
-    }
-
-    if (typeof explicitMinHeight === 'function') {
-      return Math.max(
-        0,
-        explicitMinHeight({
-          headInset,
-          headReserve,
-          tailInset,
-          viewportSize,
-        }),
-      )
-    }
-
-    return Math.max(0, viewportSize - tailInset)
+    return resolveTailReserveMinHeight({
+      consumedBeforeTail,
+      headInset,
+      headReserve,
+      minHeight: tailReserveOptions?.minHeight,
+      tailInset,
+      viewportSize,
+    })
   }
 
   function updateScrollbarInlineSize() {
@@ -579,7 +575,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     virtualItems.length,
   ])
 
-  const tailReserveMinHeight = getTailReserveMinHeight()
   const renderFirstKey =
     items.length > 0 && items[0] !== undefined ? getItemKey(items[0], 0) : null
   const renderLastKey =
@@ -595,8 +590,48 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     tailReserveEnabled && renderAppendedToTail && renderLastKey !== null
       ? renderLastKey
       : reservedTailKey
+  const appendedHeadKey = (() => {
+    const index = previousCountRef.current
+
+    if (!renderAppendedToTail || index === null) {
+      return null
+    }
+
+    const item = items[index]
+
+    return item === undefined ? null : getItemKey(item, index)
+  })()
+  const activeTailHeadKey = appendedHeadKey ?? tailReserveHeadKeyRef.current
+  const readVirtualItemStart = (itemKey: ItemKey | null) => {
+    if (itemKey === null) {
+      return null
+    }
+
+    const index = keyToIndex.get(itemKey)
+
+    if (index === undefined) {
+      return null
+    }
+
+    return (
+      virtualItems.find((virtualItem) => virtualItem.index === index)?.start ??
+      virtualizer.getOffsetForIndex(index, 'start')?.[0] ??
+      null
+    )
+  }
+  const appendedHeadStart = readVirtualItemStart(activeTailHeadKey)
+  const activeTailStart = readVirtualItemStart(activeReservedTailKey)
+  const consumedBeforeTail =
+    appendedHeadStart !== null && activeTailStart !== null
+      ? Math.max(0, activeTailStart - appendedHeadStart)
+      : tailReserveConsumedBeforeTailRef.current
+  const tailReserveMinHeight = readTailReserveMinHeight(consumedBeforeTail)
 
   activeTailReserveKeyRef.current = activeReservedTailKey
+  tailReserveHeadKeyRef.current =
+    activeReservedTailKey === null ? null : activeTailHeadKey
+  tailReserveConsumedBeforeTailRef.current =
+    activeReservedTailKey === null ? 0 : consumedBeforeTail
   tailReserveMinHeightRef.current = tailReserveMinHeight
 
   const setActiveTailReserveContent = useCallback(
