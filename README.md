@@ -68,10 +68,29 @@ export function Chat({ messages }: { messages: Message[] }) {
 
 `ChatVirtualViewport` props:
 
-- Required: `items`, `getItemKey`, `estimateSize`, `renderItem`.
-- Layout: `headInset`, `tailInset`, `headReserve`, `tailReserve`, `itemGap`.
-- Behavior: `initialAnchor`, `overscan`, `preserveScrollOnPrepend`, `atHeadThreshold`, `atTailThreshold`.
-- State: `onStateChange` reports scroll distance, tail/head booleans, viewport size, rendered count, and scrollbar size.
+| Prop | Type | Required | Description |
+| --- | --- | --- | --- |
+| `items` | `readonly TItem[]` | Yes | Items to virtualize. |
+| `getItemKey` | `(item, index) => string \| number` | Yes | Stable key for each item. |
+| `estimateSize` | `(item, index) => number` | Yes | Estimated row height before measurement. |
+| `renderItem` | `(args) => ReactNode` | Yes | Renders one item. |
+| `ariaLabel` | `string` | No | Accessible label for the scroll region. |
+| `atHeadThreshold` | `number` | No | Distance in px considered "at head". |
+| `atTailThreshold` | `number` | No | Distance in px considered "at tail". |
+| `className` | `string` | No | Class for the scroll element. |
+| `contentClassName` | `string` | No | Class for the virtual content element. |
+| `headInset` | `number` | No | Persistent overlap at the head, usually top chrome. |
+| `headReserve` | `number` | No | Extra reserved space before the first item. |
+| `initialAnchor` | `'head' \| 'tail'` | No | Initial scroll position. |
+| `itemClassName` | `string` | No | Class for each measured virtual row. |
+| `itemGap` | `number` | No | Gap in px between rows. |
+| `onStateChange` | `(state) => void` | No | Receives scroll distances, booleans, sizes, and render count. |
+| `overscan` | `number` | No | Extra rows rendered outside the viewport. |
+| `preserveScrollOnPrepend` | `boolean` | No | Keeps the visible anchor stable when items are inserted at the head. |
+| `role` | `string` | No | ARIA role for the scroll element. |
+| `style` | `CSSProperties` | No | Inline style for the scroll element. |
+| `tailInset` | `number` | No | Persistent overlap at the tail, usually composer space. |
+| `tailReserve` | `boolean \| ChatTailReserveOptions` | No | Gives the active appended tail item a viewport-sized minimum height. |
 
 Imperative handle:
 
