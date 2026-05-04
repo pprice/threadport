@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BrandMark } from './lib/BrandMark'
 
 const INSTALL_COMMAND = 'npm i @phipri/react-threadport'
 export const REPO_URL = 'https://github.com/pprice/threadport'
@@ -39,7 +40,7 @@ export function SiteHeader() {
   return (
     <header className="siteHeader">
       <a className="brand" href="/">
-        <span className="brandMark" aria-hidden="true" />
+        <BrandMark />
         Threadport
       </a>
       <span aria-hidden="true" />

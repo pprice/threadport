@@ -1,5 +1,6 @@
 import { type ReactElement, useEffect, useState } from 'react'
 import { Link, Route, Router, Switch, useLocation } from 'wouter'
+import { BrandMark } from '../lib/BrandMark'
 import { examples, REPO_URL } from './examples-meta'
 import DataLoadingExample from './pages/data-loading'
 import FullscreenExample from './pages/fullscreen'
@@ -78,7 +79,7 @@ function ExamplesRail({ onNavigate }: { onNavigate: () => void }) {
   return (
     <nav className="examplesRail" aria-label="Examples">
       <a className="brand" href="/" onClick={onNavigate}>
-        <span className="brandMark" aria-hidden="true" />
+        <BrandMark />
         Threadport
       </a>
       <ul className="railList">
