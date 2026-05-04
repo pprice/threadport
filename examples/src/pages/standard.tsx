@@ -12,8 +12,10 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -24,6 +26,7 @@ function StandardExample() {
     createTranscript(36),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
 
   function commitMessage(value: string) {
     const { assistantMessage, userMessage } = createGptExchange(
@@ -45,9 +48,9 @@ function StandardExample() {
         'scrollToItem aligns the submitted prompt to the head.',
         'tailReserve gives the newest response a natural starting space.',
       ]}
-      aside={<Metrics state={state} />}
+      aside={<Metrics state={viewportSettled ? state : null} />}
     >
-      <ThreadPort.Root className="demoFrame">
+      <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
           ariaLabel="Standard GPT-style transcript"
@@ -71,7 +74,7 @@ function StandardExample() {
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
-      </ThreadPort.Root>
+      </SettledViewportRoot>
     </ExamplePage>
   )
 }

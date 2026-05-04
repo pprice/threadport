@@ -13,8 +13,10 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -26,6 +28,7 @@ function PrependExample() {
     createTranscript(96),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
 
   function prependOlder() {
     const batch = createOlderBatch(seedRef.current)
@@ -59,11 +62,11 @@ function PrependExample() {
           <button type="button" onClick={prependOlder}>
             Prepend older messages
           </button>
-          <Metrics state={state} />
+          <Metrics state={viewportSettled ? state : null} />
         </>
       }
     >
-      <ThreadPort.Root className="demoFrame">
+      <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
           ariaLabel="Prepend transcript"
@@ -88,7 +91,7 @@ function PrependExample() {
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
-      </ThreadPort.Root>
+      </SettledViewportRoot>
     </ExamplePage>
   )
 }

@@ -105,6 +105,7 @@ test('/examples/prepend/ preserves the visible anchor when older rows load', asy
   const viewport = page.locator('.exampleViewport')
 
   await expect(viewport).toBeVisible()
+  await expect(page.locator('.viewportSettled')).toBeVisible()
   await viewport.evaluate((element) => {
     element.scrollTop = Math.max(0, element.scrollTop - 900)
     element.dispatchEvent(new Event('scroll', { bubbles: true }))

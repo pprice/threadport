@@ -511,6 +511,50 @@ export function Metrics({ state }: { state: ThreadPort.ViewportState | null }) {
   )
 }
 
+export function useInitialViewportSettled(
+  state: ThreadPort.ViewportState | null,
+  delay = 90,
+) {
+  const [settled, setSettled] = useState(false)
+
+  useEffect(() => {
+    if (settled) {
+      return
+    }
+
+    if (!state) {
+      setSettled(false)
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setSettled(true)
+    }, delay)
+
+    return () => window.clearTimeout(timer)
+  }, [delay, settled, state])
+
+  return settled
+}
+
+export function SettledViewportRoot({
+  children,
+  className = 'demoFrame',
+  settled,
+}: {
+  children: ReactNode
+  className?: string
+  settled: boolean
+}) {
+  return (
+    <ThreadPort.Root
+      className={`${className} ${settled ? 'viewportSettled' : 'viewportSettling'}`}
+    >
+      {children}
+    </ThreadPort.Root>
+  )
+}
+
 export function Composer({
   disabled,
   onSubmit,

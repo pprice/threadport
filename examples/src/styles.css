@@ -892,13 +892,55 @@ h1 {
   height: 100%;
   overscroll-behavior: contain;
   overflow-anchor: none;
+  scrollbar-color: color-mix(in oklch, var(--quiet) 42%, transparent)
+    transparent;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
+}
+
+.exampleViewport::-webkit-scrollbar {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.exampleViewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.exampleViewport::-webkit-scrollbar-thumb {
+  border: 0.22rem solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: color-mix(in oklch, var(--quiet) 42%, transparent);
+}
+
+.exampleViewport::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--quiet) 62%, transparent);
 }
 
 .exampleContent {
   width: min(49rem, 100%);
   margin: 0 auto;
+}
+
+.viewportSettling .exampleContent {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.viewportSettled .exampleContent {
+  opacity: 1;
+  transition: opacity 120ms ease-out;
+  visibility: visible;
+}
+
+.viewportSettling .exampleViewport {
+  scrollbar-color: transparent transparent;
+}
+
+.viewportSettling .exampleViewport::-webkit-scrollbar-thumb {
+  background-color: transparent;
 }
 
 .exampleRow {

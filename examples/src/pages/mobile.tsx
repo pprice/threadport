@@ -12,8 +12,10 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -24,6 +26,7 @@ function MobileExample() {
     createTranscript(30),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
 
   function commitMessage(value: string) {
     const { assistantMessage, userMessage } = createGptExchange(
@@ -45,10 +48,10 @@ function MobileExample() {
         'Wheel and touch scrolling stay attached to the viewport.',
         'Submitted prompts align below the mobile head inset.',
       ]}
-      aside={<Metrics state={state} />}
+      aside={<Metrics state={viewportSettled ? state : null} />}
     >
       <div className="phoneStage">
-        <ThreadPort.Root className="phoneFrame">
+        <SettledViewportRoot className="phoneFrame" settled={viewportSettled}>
           <div className="mobileHead" aria-hidden="true">
             <span>Threadport</span>
             <span>Menu</span>
@@ -76,7 +79,7 @@ function MobileExample() {
           <ThreadPort.Overlay className="composerDock" placement="tail">
             <Composer onSubmit={commitMessage} />
           </ThreadPort.Overlay>
-        </ThreadPort.Root>
+        </SettledViewportRoot>
       </div>
     </ExamplePage>
   )

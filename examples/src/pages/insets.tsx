@@ -12,8 +12,10 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -27,6 +29,7 @@ function InsetsExample() {
     createTranscript(34),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
 
   function commitMessage(value: string) {
     const { assistantMessage, userMessage } = createGptExchange(
@@ -48,9 +51,9 @@ function InsetsExample() {
         'tailInset reserves room for the composer below the transcript.',
         'Both visible bands are host-owned overlays.',
       ]}
-      aside={<Metrics state={state} />}
+      aside={<Metrics state={viewportSettled ? state : null} />}
     >
-      <ThreadPort.Root className="demoFrame">
+      <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
           ariaLabel="Inset transcript"
@@ -74,7 +77,7 @@ function InsetsExample() {
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
-      </ThreadPort.Root>
+      </SettledViewportRoot>
     </ExamplePage>
   )
 }

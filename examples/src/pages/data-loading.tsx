@@ -15,8 +15,10 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -37,6 +39,7 @@ function DataLoadingExample() {
     createTranscript(76),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
 
   function finishLoad() {
     const batch = createOlderBatch(seedRef.current)
@@ -139,11 +142,11 @@ function DataLoadingExample() {
           >
             Scroll backward
           </button>
-          <Metrics state={state} />
+          <Metrics state={viewportSettled ? state : null} />
         </>
       }
     >
-      <ThreadPort.Root className="demoFrame">
+      <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
           ariaLabel="Data loading transcript"
@@ -172,7 +175,7 @@ function DataLoadingExample() {
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
-      </ThreadPort.Root>
+      </SettledViewportRoot>
     </ExamplePage>
   )
 }

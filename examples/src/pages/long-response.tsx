@@ -12,9 +12,11 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   streamMessageChunks,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -45,6 +47,7 @@ function LongResponseExample() {
     createTranscript(24),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
 
   function stopStream() {
     stopStreamRef.current?.()
@@ -95,11 +98,11 @@ function LongResponseExample() {
           >
             Append long response
           </button>
-          <Metrics state={state} />
+          <Metrics state={viewportSettled ? state : null} />
         </>
       }
     >
-      <ThreadPort.Root className="demoFrame">
+      <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
           ariaLabel="Long response tail reserve transcript"
@@ -123,7 +126,7 @@ function LongResponseExample() {
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
-      </ThreadPort.Root>
+      </SettledViewportRoot>
     </ExamplePage>
   )
 }

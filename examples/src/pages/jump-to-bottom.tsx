@@ -13,8 +13,10 @@ import {
   MessageView,
   Metrics,
   mountPage,
+  SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
+  useInitialViewportSettled,
   useReducedMotion,
 } from '../shared'
 
@@ -25,6 +27,7 @@ function JumpToBottomExample() {
     createTranscript(52),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
+  const viewportSettled = useInitialViewportSettled(state)
   const showJump = Boolean(state && state.distanceFromTail > 140)
 
   function tailAnimation(duration = 360) {
@@ -87,11 +90,11 @@ function JumpToBottomExample() {
           <button type="button" onClick={appendRemoteReply}>
             Append reply below
           </button>
-          <Metrics state={state} />
+          <Metrics state={viewportSettled ? state : null} />
         </>
       }
     >
-      <ThreadPort.Root className="demoFrame">
+      <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
           ariaLabel="Jump to bottom transcript"
@@ -126,7 +129,7 @@ function JumpToBottomExample() {
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
-      </ThreadPort.Root>
+      </SettledViewportRoot>
     </ExamplePage>
   )
 }
