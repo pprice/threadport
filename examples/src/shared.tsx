@@ -399,10 +399,6 @@ export function ExamplePage({
       <SiteHeader activeId={activeId} />
       <main className="exampleLayout">
         <section className="examplePanel" aria-labelledby={`${activeId}-title`}>
-          <a className="backLink" href="/">
-            Index
-          </a>
-          <p className="eyebrow">{activeExample?.scope ?? 'Example'}</p>
           <h1 id={`${activeId}-title`}>{title}</h1>
           <p className="lede">{summary}</p>
           <ul className="noteList">
