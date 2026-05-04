@@ -229,8 +229,8 @@ export function Home() {
       <main className="homeMain">
         <section className="homeHero">
           <div className="heroCopy">
-            <p className="eyebrow">React · headless · v1.0</p>
-            <h1>The headless chat viewport for React</h1>
+            <p className="eyebrow">React · headless · virtualized · v1.0</p>
+            <h1>A headless React viewport built for chat</h1>
             <p className="lede">
               All the scroll mechanics that make ChatGPT and Claude feel right,
               headless, in your React app. You ship the messages, composer, and

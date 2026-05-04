@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "threadport",
+  "compatibility_date": "2026-05-04",
+  "assets": {
+    "directory": "./apps/site/dist",
+    "not_found_handling": "single-page-application"
+  }
+}
