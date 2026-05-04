@@ -58,10 +58,12 @@ export function useViewportStateEmitter({
     return () => {
       if (stateFrameRef.current !== null) {
         cancelAnimationFrame(stateFrameRef.current)
+        stateFrameRef.current = null
       }
 
       if (settledStateFrameRef.current !== null) {
         cancelAnimationFrame(settledStateFrameRef.current)
+        settledStateFrameRef.current = null
       }
     }
   }, [])

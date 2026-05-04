@@ -160,13 +160,22 @@ async function showJumpToBottom(page: Page) {
   await expect(page.getByTestId('jump-to-bottom')).toBeVisible()
 }
 
-async function expectStableComposerAndTail(before: Snapshot, after: Snapshot) {
+async function expectStableComposerAndTail(
+  page: Page,
+  before: Snapshot,
+  after: Snapshot,
+) {
   expect(after.jumpExists).toBe(false)
-  expect(after.tailMetric).toBe('0px')
-  expect(after.tailDistance ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(1)
-  expect(after.pageScrollY).toBe(0)
-  expect(after.composerY).toBe(before.composerY)
-  expect(after.composerHeight).toBe(before.composerHeight)
+  await expect
+    .poll(async () => (await readSnapshot(page)).tailMetric)
+    .toBe('0px')
+  const settled = await readSnapshot(page)
+  expect(settled.tailDistance ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
+    1,
+  )
+  expect(settled.pageScrollY).toBe(0)
+  expect(settled.composerY).toBe(before.composerY)
+  expect(settled.composerHeight).toBe(before.composerHeight)
 }
 
 async function exerciseJumpToBottom(page: Page, label: string) {
@@ -177,7 +186,7 @@ async function exerciseJumpToBottom(page: Page, label: string) {
     await wheelSeveral(page.locator('.chatViewport'), page, 900, 8)
     await expect(page.getByTestId('jump-to-bottom')).toHaveCount(0)
 
-    await expectStableComposerAndTail(before, await readSnapshot(page))
+    await expectStableComposerAndTail(page, before, await readSnapshot(page))
   })
 
   await test.step(`${label}: hides by wheel over jump control`, async () => {
@@ -187,7 +196,7 @@ async function exerciseJumpToBottom(page: Page, label: string) {
     await wheelSeveral(page.getByTestId('jump-to-bottom'), page, 900, 16)
     await expect(page.getByTestId('jump-to-bottom')).toHaveCount(0)
 
-    await expectStableComposerAndTail(before, await readSnapshot(page))
+    await expectStableComposerAndTail(page, before, await readSnapshot(page))
   })
 
   await test.step(`${label}: hides by click`, async () => {
@@ -200,7 +209,7 @@ async function exerciseJumpToBottom(page: Page, label: string) {
       .poll(async () => (await readSnapshot(page)).tailDistance)
       .toBeLessThanOrEqual(1)
 
-    await expectStableComposerAndTail(before, await readSnapshot(page))
+    await expectStableComposerAndTail(page, before, await readSnapshot(page))
   })
 }
 
@@ -477,7 +486,7 @@ test('long streaming content burns through the dynamic tail reserve', async ({
   await page.getByTestId('jump-to-bottom').click()
   await expect(page.getByTestId('jump-to-bottom')).toHaveCount(0)
 
-  await expectStableComposerAndTail(before, await readSnapshot(page))
+  await expectStableComposerAndTail(page, before, await readSnapshot(page))
 })
 
 test('scroll-to-head accounts for the mobile head inset', async ({ page }) => {
