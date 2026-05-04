@@ -727,6 +727,8 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       onScroll={handleScroll}
       role={role ?? (ariaLabel ? 'region' : undefined)}
       style={{
+        flex: '1 1 auto',
+        minHeight: 0,
         overflowY: 'auto',
         position: 'relative',
         ...style,

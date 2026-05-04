@@ -12,7 +12,6 @@ import {
   InsetOverlays,
   MessageView,
   Metrics,
-  mountPage,
   SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
@@ -20,7 +19,7 @@ import {
   useReducedMotion,
 } from '../shared'
 
-function JumpToBottomExample() {
+export default function JumpToBottomExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
@@ -133,5 +132,3 @@ function JumpToBottomExample() {
     </ExamplePage>
   )
 }
-
-mountPage(<JumpToBottomExample />)

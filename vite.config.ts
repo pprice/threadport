@@ -14,19 +14,13 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        dataLoading: 'examples/data-loading/index.html',
-        insets: 'examples/insets/index.html',
+        examples: 'examples/index.html',
         index: 'index.html',
-        jumpToBottom: 'examples/jump-to-bottom/index.html',
-        longResponse: 'examples/long-response/index.html',
-        mobile: 'examples/mobile/index.html',
-        prepend: 'examples/prepend/index.html',
-        standard: 'examples/standard/index.html',
       },
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom/client', 'react/jsx-dev-runtime'],
+    include: ['react', 'react-dom/client', 'react/jsx-dev-runtime', 'wouter'],
   },
   plugins: [
     {
@@ -59,6 +53,44 @@ export default defineConfig({
             injectTo: 'head-prepend' as const,
           })),
         ]
+      },
+    },
+    {
+      name: 'threadport-examples-spa-fallback',
+      configureServer(server) {
+        server.middlewares.use(
+          (req: { method?: string; url?: string }, _res, next: () => void) => {
+            const url = req.url ?? ''
+
+            if (
+              url.startsWith('/examples/') &&
+              !url.startsWith('/examples/src/') &&
+              !url.includes('.') &&
+              req.method === 'GET'
+            ) {
+              req.url = '/examples/index.html'
+            }
+
+            next()
+          },
+        )
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use(
+          (req: { method?: string; url?: string }, _res, next: () => void) => {
+            const url = req.url ?? ''
+
+            if (
+              url.startsWith('/examples/') &&
+              !url.includes('.') &&
+              req.method === 'GET'
+            ) {
+              req.url = '/examples/index.html'
+            }
+
+            next()
+          },
+        )
       },
     },
     react(),

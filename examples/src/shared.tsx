@@ -44,7 +44,7 @@ export const examples: ExampleMeta[] = [
     id: 'standard',
     label: 'Standard',
     description: 'A GPT-style transcript with submitted prompts aligned high.',
-    href: '/examples/standard/',
+    href: '/examples/standard',
     integration: [
       'items',
       'estimateSize',
@@ -61,7 +61,7 @@ export const examples: ExampleMeta[] = [
     id: 'insets',
     label: 'Insets',
     description: 'Visible head and tail insets for app chrome.',
-    href: '/examples/insets/',
+    href: '/examples/insets',
     integration: [
       'headInset',
       'tailInset',
@@ -77,7 +77,7 @@ export const examples: ExampleMeta[] = [
     id: 'long-response',
     label: 'Long response',
     description: 'Tail reserve with a deliberately long assistant answer.',
-    href: '/examples/long-response/',
+    href: '/examples/long-response',
     integration: [
       'tailReserve',
       'minHeight',
@@ -93,7 +93,7 @@ export const examples: ExampleMeta[] = [
     id: 'jump-to-bottom',
     label: 'Jump to bottom',
     description: 'Expose a jump control when the reader leaves the tail.',
-    href: '/examples/jump-to-bottom/',
+    href: '/examples/jump-to-bottom',
     integration: [
       'ViewportHandle',
       'scrollToTail',
@@ -109,7 +109,7 @@ export const examples: ExampleMeta[] = [
     id: 'mobile',
     label: 'Mobile',
     description: 'A phone-sized GPT shell with frame-relative overlays.',
-    href: '/examples/mobile/',
+    href: '/examples/mobile',
     integration: ['headInset', 'tailInset', 'Overlay', 'Root', 'Viewport'],
     ownedBy: 'host',
     scope: 'Responsive',
@@ -119,7 +119,7 @@ export const examples: ExampleMeta[] = [
     id: 'prepend',
     label: 'Prepend',
     description: 'Load older messages above while preserving the anchor.',
-    href: '/examples/prepend/',
+    href: '/examples/prepend',
     integration: ['preserveScrollOnPrepend', 'estimateSize', 'initialAnchor'],
     ownedBy: 'viewport',
     scope: 'History',
@@ -129,7 +129,7 @@ export const examples: ExampleMeta[] = [
     id: 'data-loading',
     label: 'Data loading',
     description: 'Fetch older pages as the reader scrolls backward.',
-    href: '/examples/data-loading/',
+    href: '/examples/data-loading',
     integration: [
       'onStateChange',
       'scrollOffset',
@@ -141,6 +141,27 @@ export const examples: ExampleMeta[] = [
     ownedBy: 'host',
     scope: 'Loading',
     sourcePath: 'examples/src/pages/data-loading.tsx',
+  },
+  {
+    id: 'fullscreen',
+    label: 'Fullscreen',
+    description:
+      'Viewport fills the full document height — phone, tablet, or desktop.',
+    href: '/examples/fullscreen',
+    integration: ['Root', 'Viewport', 'Overlay tail', 'tailReserve'],
+    ownedBy: 'host',
+    scope: 'Layout',
+    sourcePath: 'examples/src/pages/fullscreen.tsx',
+  },
+  {
+    id: 'variable-height',
+    label: 'Variable height',
+    description: 'Resize the host container live; the viewport tracks it.',
+    href: '/examples/variable-height',
+    integration: ['Root', 'Viewport', 'min-height', 'overflow'],
+    ownedBy: 'host',
+    scope: 'Layout',
+    sourcePath: 'examples/src/pages/variable-height.tsx',
   },
 ]
 
@@ -395,45 +416,42 @@ export function ExamplePage({
   const activeExample = examples.find((example) => example.id === activeId)
 
   return (
-    <div className="siteRoot">
-      <SiteHeader activeId={activeId} />
-      <main className="exampleLayout">
-        <section className="examplePanel" aria-labelledby={`${activeId}-title`}>
-          <h1 id={`${activeId}-title`}>{title}</h1>
-          <p className="lede">{summary}</p>
-          <ul className="noteList">
-            {notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-          </ul>
-          {activeExample && (
-            <section className="integrationPanel" aria-label="Integration">
-              <div className="integrationHeader">
-                <span>Source</span>
-                <code>{activeExample.sourcePath}</code>
-              </div>
-              <div>
-                <p>Inspect</p>
-                <ul className="integrationList">
-                  {activeExample.integration.map((item) => (
-                    <li key={item}>
-                      <code>{item}</code>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-          )}
-          {aside && (
-            <aside className="demoAside" aria-label={`${title} controls`}>
-              {aside}
-            </aside>
-          )}
-        </section>
-        <section className="demoStage" aria-label={`${title} demo`}>
-          {children}
-        </section>
-      </main>
+    <div className="exampleLayout">
+      <section className="examplePanel" aria-labelledby={`${activeId}-title`}>
+        <h1 id={`${activeId}-title`}>{title}</h1>
+        <p className="lede">{summary}</p>
+        <ul className="noteList">
+          {notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+        {activeExample && (
+          <section className="integrationPanel" aria-label="Integration">
+            <div className="integrationHeader">
+              <span>Source</span>
+              <code>{activeExample.sourcePath}</code>
+            </div>
+            <div>
+              <p>Inspect</p>
+              <ul className="integrationList">
+                {activeExample.integration.map((item) => (
+                  <li key={item}>
+                    <code>{item}</code>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+        {aside && (
+          <aside className="demoAside" aria-label={`${title} controls`}>
+            {aside}
+          </aside>
+        )}
+      </section>
+      <section className="demoStage" aria-label={`${title} demo`}>
+        {children}
+      </section>
     </div>
   )
 }

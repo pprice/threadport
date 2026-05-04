@@ -12,7 +12,6 @@ import {
   InsetOverlays,
   MessageView,
   Metrics,
-  mountPage,
   SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
@@ -20,7 +19,7 @@ import {
   useReducedMotion,
 } from '../shared'
 
-function PrependExample() {
+export default function PrependExample() {
   const seedRef = useRef(0)
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
@@ -95,5 +94,3 @@ function PrependExample() {
     </ExamplePage>
   )
 }
-
-mountPage(<PrependExample />)

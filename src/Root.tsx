@@ -181,6 +181,10 @@ export function Root({ children, className, style }: RootProps) {
     '--threadport-head-inset': `${state.headInset}px`,
     '--threadport-scrollbar-inline-size': `${state.scrollbarInlineSize}px`,
     '--threadport-tail-inset': `${state.tailInset}px`,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    minWidth: 0,
     position: 'relative',
     ...style,
   }

@@ -11,7 +11,6 @@ import {
   InsetOverlays,
   MessageView,
   Metrics,
-  mountPage,
   SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
@@ -22,7 +21,7 @@ import {
 const headInset = 84
 const tailInset = 140
 
-function InsetsExample() {
+export default function InsetsExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
@@ -81,5 +80,3 @@ function InsetsExample() {
     </ExamplePage>
   )
 }
-
-mountPage(<InsetsExample />)

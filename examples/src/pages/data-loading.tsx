@@ -14,7 +14,6 @@ import {
   InsetOverlays,
   MessageView,
   Metrics,
-  mountPage,
   SettledViewportRoot,
   scrollPromptToHead,
   ThreadPort,
@@ -26,7 +25,7 @@ const DATA_LOADING_HEAD_INSET = 78
 const AUTO_LOAD_OLDER_THRESHOLD = 1_800
 const AUTO_LOAD_HEAD_FALLBACK = 96
 
-function DataLoadingExample() {
+export default function DataLoadingExample() {
   const seedRef = useRef(0)
   const timerRef = useRef<number | null>(null)
   const loadingRef = useRef(false)
@@ -179,5 +178,3 @@ function DataLoadingExample() {
     </ExamplePage>
   )
 }
-
-mountPage(<DataLoadingExample />)

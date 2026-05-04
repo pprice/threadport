@@ -1,13 +1,14 @@
 import { expect, type Page, test } from '@playwright/test'
 
 const exampleRoutes = [
-  '/examples/standard/',
-  '/examples/insets/',
-  '/examples/long-response/',
-  '/examples/jump-to-bottom/',
-  '/examples/mobile/',
-  '/examples/prepend/',
-  '/examples/data-loading/',
+  '/examples/standard',
+  '/examples/insets',
+  '/examples/long-response',
+  '/examples/jump-to-bottom',
+  '/examples/mobile',
+  '/examples/prepend',
+  '/examples/data-loading',
+  '/examples/fullscreen',
 ]
 
 async function captureCenterExampleMessage(page: Page) {
@@ -97,10 +98,10 @@ for (const route of exampleRoutes) {
   })
 }
 
-test('/examples/prepend/ preserves the visible anchor when older rows load', async ({
+test('/examples/prepend preserves the visible anchor when older rows load', async ({
   page,
 }) => {
-  await page.goto('/examples/prepend/')
+  await page.goto('/examples/prepend')
 
   const viewport = page.locator('.exampleViewport')
 
@@ -135,10 +136,10 @@ test('/examples/prepend/ preserves the visible anchor when older rows load', asy
   }
 })
 
-test('/examples/jump-to-bottom/ reveals an explicit jump control', async ({
+test('/examples/jump-to-bottom reveals an explicit jump control', async ({
   page,
 }) => {
-  await page.goto('/examples/jump-to-bottom/')
+  await page.goto('/examples/jump-to-bottom')
 
   await page.getByRole('button', { name: 'Read earlier' }).click()
 
@@ -147,10 +148,10 @@ test('/examples/jump-to-bottom/ reveals an explicit jump control', async ({
   ).toBeVisible()
 })
 
-test('/examples/long-response/ streams the long assistant row', async ({
+test('/examples/long-response streams the long assistant row', async ({
   page,
 }) => {
-  await page.goto('/examples/long-response/')
+  await page.goto('/examples/long-response')
 
   await page.getByRole('button', { name: 'Append long response' }).click()
 
@@ -159,10 +160,10 @@ test('/examples/long-response/ streams the long assistant row', async ({
   ).toContainText('The final result is mundane', { timeout: 5000 })
 })
 
-test('/examples/data-loading/ shows a loading state for older data', async ({
+test('/examples/data-loading shows a loading state for older data', async ({
   page,
 }) => {
-  await page.goto('/examples/data-loading/')
+  await page.goto('/examples/data-loading')
 
   await page.getByRole('button', { name: 'Scroll backward' }).click()
   await expect(page.getByText('Loading older messages')).toBeVisible()

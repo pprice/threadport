@@ -11,7 +11,6 @@ import {
   InsetOverlays,
   MessageView,
   Metrics,
-  mountPage,
   SettledViewportRoot,
   scrollPromptToHead,
   streamMessageChunks,
@@ -39,7 +38,7 @@ const longResponseChunks = [
 
 const completedLongResponse = longResponseChunks.join('').trim()
 
-function LongResponseExample() {
+export default function LongResponseExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const stopStreamRef = useRef<(() => void) | null>(null)
   const reducedMotion = useReducedMotion()
@@ -130,5 +129,3 @@ function LongResponseExample() {
     </ExamplePage>
   )
 }
-
-mountPage(<LongResponseExample />)
