@@ -42,7 +42,7 @@ export function SiteHeader() {
       <div className="siteHeaderInner">
         <a className="brand" href="/">
           <BrandMark />
-          Threadport
+          react-threadport
         </a>
         <span aria-hidden="true" />
         <div className="headerActions">

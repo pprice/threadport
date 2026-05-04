@@ -80,7 +80,7 @@ function ExamplesRail({ onNavigate }: { onNavigate: () => void }) {
     <nav className="examplesRail" aria-label="Examples">
       <a className="brand" href="/" onClick={onNavigate}>
         <BrandMark />
-        Threadport
+        react-threadport
       </a>
       <ul className="railList">
         {examples.map((example) => (
