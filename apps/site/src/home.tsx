@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { REPO_URL, SiteHeader } from './Header'
 import {
   createMessage,
   type DemoMessage,
@@ -8,9 +10,7 @@ import {
   MessageView,
   ThreadPort,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useEffect, useRef, useState } from 'react'
-import { REPO_URL, SiteHeader } from './Header'
+} from './lib/demo'
 
 type PreviewExchange = {
   answer: string

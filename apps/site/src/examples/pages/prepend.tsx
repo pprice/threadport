@@ -1,6 +1,8 @@
+import { useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
+  createOlderBatch,
   createTranscript,
   type DemoMessage,
   EXAMPLE_ITEM_GAP,
@@ -14,23 +16,30 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useRef, useState } from 'react'
+} from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
-export default function StandardExample() {
+export default function PrependExample() {
+  const seedRef = useRef(0)
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
-    createTranscript(36),
+    createTranscript(96),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
 
+  function prependOlder() {
+    const batch = createOlderBatch(seedRef.current)
+
+    seedRef.current += batch.length
+    setMessages((current) => [...batch, ...current])
+  }
+
   function commitMessage(value: string) {
     const { assistantMessage, userMessage } = createGptExchange(
       value,
-      'The prompt is aligned below the head inset, then the assistant response starts in the open space beneath it.',
+      'Appending still behaves like the standard GPT flow, even on a transcript that supports older history above.',
     )
 
     setMessages((current) => [...current, userMessage, assistantMessage])
@@ -39,20 +48,27 @@ export default function StandardExample() {
 
   return (
     <ExamplePage
-      activeId="standard"
-      title="Standard"
-      summary="A GPT-style transcript: submit a prompt, align it high, and let the response begin with room below."
+      activeId="prepend"
+      title="Prepend"
+      summary="Insert older messages above the viewport without moving the message the reader is looking at."
       notes={[
-        'The host app appends both the user prompt and assistant row.',
-        'scrollToItem aligns the submitted prompt to the head.',
-        'tailReserve gives the newest response a natural starting space.',
+        'This example has no headReserve; it only prepends loaded rows.',
+        'preserveScrollOnPrepend keeps the visible anchor stable.',
+        'The same GPT-style composer still appends at the tail.',
       ]}
-      aside={<Metrics state={viewportSettled ? state : null} />}
+      aside={
+        <>
+          <button type="button" onClick={prependOlder}>
+            Prepend older messages
+          </button>
+          <Metrics state={viewportSettled ? state : null} />
+        </>
+      }
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
-          ariaLabel="Standard GPT-style transcript"
+          ariaLabel="Prepend transcript"
           className="exampleViewport"
           contentClassName="exampleContent"
           estimateSize={estimateMessageSize}
@@ -63,11 +79,12 @@ export default function StandardExample() {
           itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
+          preserveScrollOnPrepend
           renderItem={({ item }) => <MessageView message={item} />}
           role="log"
           tailInset={108}
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
-          virtualizerOptions={{ overscan: 8 }}
+          virtualizerOptions={{ overscan: 10 }}
         />
         <InsetOverlays />
         <ThreadPort.Overlay className="composerDock" placement="tail">

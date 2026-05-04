@@ -1,7 +1,7 @@
+import { useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
-  createOlderBatch,
   createTranscript,
   type DemoMessage,
   EXAMPLE_ITEM_GAP,
@@ -15,31 +15,25 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useRef, useState } from 'react'
+} from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
-export default function PrependExample() {
-  const seedRef = useRef(0)
+const headInset = 84
+const tailInset = 140
+
+export default function InsetsExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
-    createTranscript(96),
+    createTranscript(34),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
 
-  function prependOlder() {
-    const batch = createOlderBatch(seedRef.current)
-
-    seedRef.current += batch.length
-    setMessages((current) => [...batch, ...current])
-  }
-
   function commitMessage(value: string) {
     const { assistantMessage, userMessage } = createGptExchange(
       value,
-      'Appending still behaves like the standard GPT flow, even on a transcript that supports older history above.',
+      'The rendered inset bands are overlays, not rows. They reserve space while the transcript remains virtualized.',
     )
 
     setMessages((current) => [...current, userMessage, assistantMessage])
@@ -48,45 +42,37 @@ export default function PrependExample() {
 
   return (
     <ExamplePage
-      activeId="prepend"
-      title="Prepend"
-      summary="Insert older messages above the viewport without moving the message the reader is looking at."
+      activeId="insets"
+      title="Insets"
+      summary="Render the head and tail insets so the reserved chrome space is visible while messages keep their GPT-style flow."
       notes={[
-        'This example has no headReserve; it only prepends loaded rows.',
-        'preserveScrollOnPrepend keeps the visible anchor stable.',
-        'The same GPT-style composer still appends at the tail.',
+        'headInset reserves room for frame chrome above the transcript.',
+        'tailInset reserves room for the composer below the transcript.',
+        'Both visible bands are host-owned overlays.',
       ]}
-      aside={
-        <>
-          <button type="button" onClick={prependOlder}>
-            Prepend older messages
-          </button>
-          <Metrics state={viewportSettled ? state : null} />
-        </>
-      }
+      aside={<Metrics state={viewportSettled ? state : null} />}
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
-          ariaLabel="Prepend transcript"
+          ariaLabel="Inset transcript"
           className="exampleViewport"
           contentClassName="exampleContent"
           estimateSize={estimateMessageSize}
           getItemKey={getMessageKey}
-          headInset={28}
+          headInset={headInset}
           initialAnchor="tail"
           itemGap={EXAMPLE_ITEM_GAP}
           itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
-          preserveScrollOnPrepend
           renderItem={({ item }) => <MessageView message={item} />}
           role="log"
-          tailInset={108}
+          tailInset={tailInset}
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
-          virtualizerOptions={{ overscan: 10 }}
+          virtualizerOptions={{ overscan: 8 }}
         />
-        <InsetOverlays />
+        <InsetOverlays headInset={headInset} labeled tailInset={tailInset} />
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>

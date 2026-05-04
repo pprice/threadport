@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
@@ -17,8 +18,7 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useEffect, useRef, useState } from 'react'
+} from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
 const DATA_LOADING_HEAD_INSET = 78

@@ -1,5 +1,5 @@
+import * as ThreadPort from '@phipri/react-threadport'
 import { useRef, useState } from 'react'
-import * as ThreadPort from '../src'
 
 type HarnessItem = {
   body: string

@@ -5,10 +5,9 @@
   "type": "module",
   "packageManager": "pnpm@10.30.3",
   "scripts": {
-    "build": "pnpm --filter @phipri/react-threadport build && pnpm --filter @phipri/react-threadport-site build && pnpm --filter @phipri/react-threadport-playground build && node ./scripts/merge-dist.mjs",
+    "build": "pnpm --filter @phipri/react-threadport build && pnpm --filter @phipri/react-threadport-site build",
     "build:lib": "pnpm --filter @phipri/react-threadport build",
     "build:site": "pnpm --filter @phipri/react-threadport-site build",
-    "build:playground": "pnpm --filter @phipri/react-threadport-playground build",
     "check": "biome check .",
     "check:write": "biome check --write .",
     "format": "biome format --write .",
@@ -21,8 +20,7 @@
     "test:e2e": "playwright test",
     "typecheck": "pnpm -r typecheck",
     "dev:site": "pnpm --filter @phipri/react-threadport-site dev",
-    "dev:playground": "pnpm --filter @phipri/react-threadport-playground dev",
-    "dev:fixtures": "pnpm --filter @phipri/react-threadport dev:fixtures"
+    "dev:playground": "pnpm --filter @phipri/react-threadport-playground dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.14",

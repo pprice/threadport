@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import {
   Composer,
   createMessage,
@@ -15,8 +16,7 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useEffect, useRef, useState } from 'react'
+} from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
 const longResponseChunks = [

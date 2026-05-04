@@ -1,3 +1,4 @@
+import * as ThreadPort from '@phipri/react-threadport'
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -7,7 +8,6 @@ import {
   useRef,
   useState,
 } from 'react'
-import * as ThreadPort from '../src'
 
 type ExampleId = 'chatgpt' | 'mobile' | 'history'
 type MessageRole = 'assistant' | 'system' | 'user'

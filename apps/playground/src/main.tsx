@@ -1,8 +1,12 @@
-import '@phipri/react-threadport-demo-shared/styles.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { PlaygroundApp } from './app'
+import { ApiHarness } from './ApiHarness'
+import { App } from './App'
+import './styles.css'
 
+const isApiHarness =
+  new URLSearchParams(window.location.search).get('fixture') === 'api'
+const Root = isApiHarness ? ApiHarness : App
 const rootElement = document.getElementById('root')
 
 if (!rootElement) {
@@ -11,6 +15,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <PlaygroundApp />
+    <Root />
   </StrictMode>,
 )

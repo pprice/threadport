@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
@@ -14,8 +15,7 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useRef, useState } from 'react'
+} from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
 export default function MobileExample() {

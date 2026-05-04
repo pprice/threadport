@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
@@ -14,18 +15,14 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '@phipri/react-threadport-demo-shared'
-import { useRef, useState } from 'react'
+} from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
-const headInset = 84
-const tailInset = 140
-
-export default function InsetsExample() {
+export default function StandardExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
-    createTranscript(34),
+    createTranscript(36),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
@@ -33,7 +30,7 @@ export default function InsetsExample() {
   function commitMessage(value: string) {
     const { assistantMessage, userMessage } = createGptExchange(
       value,
-      'The rendered inset bands are overlays, not rows. They reserve space while the transcript remains virtualized.',
+      'The prompt is aligned below the head inset, then the assistant response starts in the open space beneath it.',
     )
 
     setMessages((current) => [...current, userMessage, assistantMessage])
@@ -42,25 +39,25 @@ export default function InsetsExample() {
 
   return (
     <ExamplePage
-      activeId="insets"
-      title="Insets"
-      summary="Render the head and tail insets so the reserved chrome space is visible while messages keep their GPT-style flow."
+      activeId="standard"
+      title="Standard"
+      summary="A GPT-style transcript: submit a prompt, align it high, and let the response begin with room below."
       notes={[
-        'headInset reserves room for frame chrome above the transcript.',
-        'tailInset reserves room for the composer below the transcript.',
-        'Both visible bands are host-owned overlays.',
+        'The host app appends both the user prompt and assistant row.',
+        'scrollToItem aligns the submitted prompt to the head.',
+        'tailReserve gives the newest response a natural starting space.',
       ]}
       aside={<Metrics state={viewportSettled ? state : null} />}
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
-          ariaLabel="Inset transcript"
+          ariaLabel="Standard GPT-style transcript"
           className="exampleViewport"
           contentClassName="exampleContent"
           estimateSize={estimateMessageSize}
           getItemKey={getMessageKey}
-          headInset={headInset}
+          headInset={28}
           initialAnchor="tail"
           itemGap={EXAMPLE_ITEM_GAP}
           itemClassName="exampleRow"
@@ -68,11 +65,11 @@ export default function InsetsExample() {
           onStateChange={setState}
           renderItem={({ item }) => <MessageView message={item} />}
           role="log"
-          tailInset={tailInset}
+          tailInset={108}
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 8 }}
         />
-        <InsetOverlays headInset={headInset} labeled tailInset={tailInset} />
+        <InsetOverlays />
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>

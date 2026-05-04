@@ -1,12 +1,13 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": []
+  },
   "include": [
     "src",
     "tests/react",
     "tests/types",
-    "fixtures",
     "tsup.config.ts",
-    "vitest.config.ts",
-    "vite.config.ts"
+    "vitest.config.ts"
   ]
 }

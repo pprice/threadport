@@ -8,19 +8,14 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'pnpm --filter @phipri/react-threadport dev:fixtures',
+      command: 'pnpm --filter @phipri/react-threadport-playground dev',
       reuseExistingServer: false,
-      url: 'http://127.0.0.1:5175/fixtures/',
+      url: 'http://127.0.0.1:5175/',
     },
     {
       command: 'pnpm --filter @phipri/react-threadport-site dev',
       reuseExistingServer: false,
       url: 'http://127.0.0.1:5176/',
-    },
-    {
-      command: 'pnpm --filter @phipri/react-threadport-playground dev',
-      reuseExistingServer: false,
-      url: 'http://127.0.0.1:5177/examples/',
     },
   ],
   projects: [

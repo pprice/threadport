@@ -1,6 +1,6 @@
 import { expect, type Page, test } from '@playwright/test'
 
-const PLAYGROUND_BASE = 'http://127.0.0.1:5177'
+const SITE_BASE = 'http://127.0.0.1:5176'
 
 const exampleRoutes = [
   '/examples/standard',
@@ -61,7 +61,7 @@ for (const route of exampleRoutes) {
       .replaceAll('/', '-')
       .replace(/^-|-$/g, '')}`
 
-    await page.goto(`${PLAYGROUND_BASE}${route}`)
+    await page.goto(`${SITE_BASE}${route}`)
 
     const composer = page.locator('textarea[aria-label="Message"]')
 
@@ -103,7 +103,7 @@ for (const route of exampleRoutes) {
 test('/examples/prepend preserves the visible anchor when older rows load', async ({
   page,
 }) => {
-  await page.goto(`${PLAYGROUND_BASE}/examples/prepend`)
+  await page.goto(`${SITE_BASE}/examples/prepend`)
 
   const viewport = page.locator('.exampleViewport')
 
@@ -141,7 +141,7 @@ test('/examples/prepend preserves the visible anchor when older rows load', asyn
 test('/examples/jump-to-bottom reveals an explicit jump control', async ({
   page,
 }) => {
-  await page.goto(`${PLAYGROUND_BASE}/examples/jump-to-bottom`)
+  await page.goto(`${SITE_BASE}/examples/jump-to-bottom`)
 
   await page.getByRole('button', { name: 'Read earlier' }).click()
 
@@ -153,7 +153,7 @@ test('/examples/jump-to-bottom reveals an explicit jump control', async ({
 test('/examples/long-response streams the long assistant row', async ({
   page,
 }) => {
-  await page.goto(`${PLAYGROUND_BASE}/examples/long-response`)
+  await page.goto(`${SITE_BASE}/examples/long-response`)
 
   await page.getByRole('button', { name: 'Append long response' }).click()
 
@@ -165,7 +165,7 @@ test('/examples/long-response streams the long assistant row', async ({
 test('/examples/data-loading shows a loading state for older data', async ({
   page,
 }) => {
-  await page.goto(`${PLAYGROUND_BASE}/examples/data-loading`)
+  await page.goto(`${SITE_BASE}/examples/data-loading`)
 
   await page.getByRole('button', { name: 'Scroll backward' }).click()
   await expect(page.getByText('Loading older messages')).toBeVisible()

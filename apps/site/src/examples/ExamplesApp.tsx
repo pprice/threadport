@@ -176,7 +176,7 @@ function RedirectToDefault() {
   return null
 }
 
-export function PlaygroundApp() {
+export function ExamplesApp() {
   return (
     <Router base="/examples">
       <App />

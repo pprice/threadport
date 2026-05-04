@@ -18,13 +18,7 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@phipri/react-threadport": ["./packages/react-threadport/src/index.ts"],
-      "@phipri/react-threadport-demo-shared": [
-        "./packages/demo-shared/src/index.tsx"
-      ],
-      "@phipri/react-threadport-demo-shared/styles.css": [
-        "./packages/demo-shared/src/styles.css"
-      ]
+      "@phipri/react-threadport": ["./packages/react-threadport/src/index.ts"]
     }
   }
 }

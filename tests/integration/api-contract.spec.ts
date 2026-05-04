@@ -25,7 +25,7 @@ type TailReserveGeometry = {
 }
 
 async function gotoApiHarness(page: Page) {
-  await page.goto('http://127.0.0.1:5175/fixtures/?fixture=api')
+  await page.goto('http://127.0.0.1:5175/?fixture=api')
   await expect(page.locator('.apiViewport')).toBeVisible()
   await expect(page.getByTestId('api-rendered')).not.toHaveText('pending')
   await expect.poll(() => page.locator('.apiRow').count()).toBeGreaterThan(0)

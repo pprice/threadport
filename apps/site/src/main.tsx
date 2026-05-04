@@ -1,7 +1,33 @@
-import '@phipri/react-threadport-demo-shared/styles.css'
-import { StrictMode } from 'react'
+import './lib/styles.css'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
+import { Route, Router, Switch, useLocation } from 'wouter'
+import { ExamplesApp } from './examples/ExamplesApp'
 import { Home } from './home'
+
+function NotFoundRedirect() {
+  const [, setLocation] = useLocation()
+
+  useEffect(() => {
+    setLocation('/', { replace: true })
+  }, [setLocation])
+
+  return null
+}
+
+function App() {
+  return (
+    <Router>
+      <Switch>
+        <Route path="/" component={Home} />
+        <Route path="/examples/:rest*" component={ExamplesApp} />
+        <Route>
+          <NotFoundRedirect />
+        </Route>
+      </Switch>
+    </Router>
+  )
+}
 
 const rootElement = document.getElementById('root')
 
@@ -11,6 +37,6 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <Home />
+    <App />
   </StrictMode>,
 )
