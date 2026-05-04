@@ -754,6 +754,70 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 })
 ViewportBase.displayName = 'Viewport'
 
+/**
+ * Headless virtualized chat viewport.
+ *
+ * The Viewport renders an absolutely-positioned virtualized list inside a
+ * scrollable container, exposes imperative scroll commands via `ref`
+ * ({@link ViewportHandle}), and publishes scroll state via
+ * {@link ViewportProps.onStateChange}. It does not render any chrome,
+ * composer, or message content — those belong to the host, usually layered
+ * on top via {@link Overlay}.
+ *
+ * **Behavior owned by the Viewport:**
+ * - Virtualization (mounting only the visible rows + overscan).
+ * - Per-row measurement after paint, with anchor preservation when measured
+ *   sizes diverge from estimates.
+ * - Scroll-to-tail of the active appended item via the optional tail
+ *   reserve.
+ * - Anchor preservation across prepends ("loading older messages above
+ *   doesn't move the row I'm reading").
+ * - Append/prepend/rolling-buffer detection from item-key transitions.
+ * - Imperative scroll commands with eased animation, cancelable by user
+ *   wheel/touch input.
+ *
+ * **Behavior owned by the host:**
+ * - Message content, composer, and all visible UI.
+ * - When to call `scrollToItem` / `scrollToTail` / `scrollToHead`.
+ * - When to surface a jump-to-bottom button (the Viewport just reports
+ *   `distanceFromTail` via `onStateChange`).
+ * - When to load older history.
+ *
+ * See {@link ViewportProps} for the prop contract and the README's Layout
+ * section for parent sizing patterns.
+ *
+ * @example
+ * function Chat({ messages }: { messages: Message[] }) {
+ *   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
+ *
+ *   return (
+ *     <ThreadPort.Root>
+ *       <ThreadPort.Viewport
+ *         ref={viewportRef}
+ *         items={messages}
+ *         getItemKey={(m) => m.id}
+ *         estimateSize={() => 96}
+ *         renderItem={({ item }) => <Message message={item} />}
+ *         initialAnchor="tail"
+ *         tailReserve
+ *         tailInset={120}
+ *         headInset={56}
+ *       />
+ *
+ *       <ThreadPort.Overlay placement="tail">
+ *         <Composer
+ *           onSubmit={(messageId) =>
+ *             viewportRef.current?.scrollToItem(messageId, {
+ *               align: 'head',
+ *               animation: ThreadPort.Animation.easeOutQuart(420),
+ *             })
+ *           }
+ *         />
+ *       </ThreadPort.Overlay>
+ *     </ThreadPort.Root>
+ *   )
+ * }
+ */
 export const Viewport = ViewportBase as <TItem>(
   props: ViewportProps<TItem> & RefAttributes<ViewportHandle>,
 ) => ReactElement
