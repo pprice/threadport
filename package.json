@@ -20,7 +20,7 @@
     "test:e2e": "playwright test",
     "typecheck": "pnpm -r typecheck",
     "dev:site": "pnpm --filter @phipri/react-threadport-site dev",
-    "dev:playground": "pnpm --filter @phipri/react-threadport-playground dev"
+    "dev:harness": "pnpm --filter @phipri/react-threadport-harness dev"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.14",

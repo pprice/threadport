@@ -15,7 +15,7 @@ importers:
         specifier: ^1.58.2
         version: 1.59.1
 
-  apps/playground:
+  apps/harness:
     dependencies:
       '@phipri/react-threadport':
         specifier: workspace:*

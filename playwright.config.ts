@@ -8,7 +8,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'pnpm --filter @phipri/react-threadport-playground dev',
+      command: 'pnpm --filter @phipri/react-threadport-harness dev',
       reuseExistingServer: false,
       url: 'http://127.0.0.1:5175/',
     },
