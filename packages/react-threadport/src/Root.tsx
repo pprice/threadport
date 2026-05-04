@@ -1,6 +1,5 @@
 import {
   type CSSProperties,
-  createContext,
   useCallback,
   useContext,
   useLayoutEffect,
@@ -9,6 +8,7 @@ import {
   useState,
   type WheelEvent,
 } from 'react'
+import { initialRootState, RootContext } from './internal/rootContext'
 import type {
   OverlayProps,
   RootProps,
@@ -16,26 +16,11 @@ import type {
   RootState,
 } from './types'
 
-type RootContextValue = {
-  registerViewport: (registration: RootRegistration) => () => void
-  requestViewportStateUpdate: () => void
-  scrollElement: HTMLElement | null
-  state: RootState
-}
-
 type RootStyle = CSSProperties & {
   '--threadport-head-inset'?: string
   '--threadport-scrollbar-inline-size'?: string
   '--threadport-tail-inset'?: string
 }
-
-const initialState: RootState = {
-  headInset: 0,
-  scrollbarInlineSize: 0,
-  tailInset: 0,
-}
-
-const RootContext = createContext<RootContextValue | null>(null)
 
 function clampSize(value: number) {
   return Math.max(0, Number.isFinite(value) ? value : 0)
@@ -107,10 +92,6 @@ export function readScrollbarInlineSize(element: HTMLElement | null) {
   )
 }
 
-export function useRootRegistration() {
-  return useContext(RootContext)?.registerViewport
-}
-
 /**
  * Read the active {@link RootState} from the nearest Root ancestor.
  *
@@ -127,7 +108,7 @@ export function useRootRegistration() {
  * }
  */
 export function useRootState() {
-  return useContext(RootContext)?.state ?? initialState
+  return useContext(RootContext)?.state ?? initialRootState
 }
 
 /**
@@ -161,7 +142,7 @@ export function Root({ children, className, style }: RootProps) {
   const registrationIdRef = useRef(0)
   const requestStateUpdateRef = useRef<(() => void) | null>(null)
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
-  const [state, setState] = useState<RootState>(initialState)
+  const [state, setState] = useState<RootState>(initialRootState)
 
   const registerViewport = useCallback(
     ({
@@ -186,7 +167,7 @@ export function Root({ children, className, style }: RootProps) {
 
         setScrollElement(null)
         requestStateUpdateRef.current = null
-        setState(initialState)
+        setState(initialRootState)
       }
     },
     [],

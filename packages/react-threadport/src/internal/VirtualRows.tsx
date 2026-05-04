@@ -9,7 +9,7 @@ type TailReserveRenderOptions = {
 }
 
 type VirtualRowsProps<TItem> = {
-  activeReservedTailKey: ItemKey | null
+  activeTailKey: ItemKey | null
   contentClassName?: string
   getItemKey: (item: TItem, index: number) => ItemKey
   itemClassName?: string
@@ -25,7 +25,7 @@ type VirtualRowsProps<TItem> = {
 }
 
 export function VirtualRows<TItem>({
-  activeReservedTailKey,
+  activeTailKey,
   contentClassName,
   getItemKey,
   itemClassName,
@@ -58,7 +58,7 @@ export function VirtualRows<TItem>({
         const itemKey = getItemKey(item, virtualItem.index)
         const hasActiveTailReserve =
           tailReserveEnabled &&
-          activeReservedTailKey === itemKey &&
+          activeTailKey === itemKey &&
           virtualItem.index === items.length - 1
         const renderedItem = renderItem({
           item,

@@ -2,7 +2,7 @@ import { type RefObject, useLayoutEffect } from 'react'
 import type { ItemKey } from '../types'
 
 type UseTailReserveContentMeasurementArgs = {
-  activeReservedTailKey: ItemKey | null
+  activeTailKey: ItemKey | null
   measuredTailReserveKeyRef: RefObject<ItemKey | null>
   scheduleStateEmit: () => void
   tailReserveContentElement: HTMLDivElement | null
@@ -10,19 +10,19 @@ type UseTailReserveContentMeasurementArgs = {
 }
 
 export function useTailReserveContentMeasurement({
-  activeReservedTailKey,
+  activeTailKey,
   measuredTailReserveKeyRef,
   scheduleStateEmit,
   tailReserveContentElement,
   tailReserveContentSizeRef,
 }: UseTailReserveContentMeasurementArgs) {
   useLayoutEffect(() => {
-    if (measuredTailReserveKeyRef.current !== activeReservedTailKey) {
-      measuredTailReserveKeyRef.current = activeReservedTailKey
+    if (measuredTailReserveKeyRef.current !== activeTailKey) {
+      measuredTailReserveKeyRef.current = activeTailKey
       tailReserveContentSizeRef.current = 0
     }
 
-    if (activeReservedTailKey === null) {
+    if (activeTailKey === null) {
       tailReserveContentSizeRef.current = 0
       scheduleStateEmit()
       return
@@ -55,5 +55,5 @@ export function useTailReserveContentMeasurement({
     observer.observe(measuredElement)
 
     return () => observer.disconnect()
-  }, [activeReservedTailKey, tailReserveContentElement])
+  }, [activeTailKey, tailReserveContentElement])
 }

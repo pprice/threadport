@@ -18,6 +18,7 @@ import {
   DEFAULT_ESTIMATE,
 } from './internal/constants'
 import { computeItemKeyTransition } from './internal/itemKeyTransitions'
+import { useRootRegistration } from './internal/rootContext'
 import { createFrameThrottle } from './internal/scheduleFrame'
 import {
   type ActiveScrollAnimation,
@@ -30,10 +31,11 @@ import {
   resolveTailReserveMinHeight,
   resolveUnconsumedTailReserve,
 } from './internal/tailReserveCalculation'
+import { useLatest } from './internal/useLatest'
 import { useTailReserveContentMeasurement } from './internal/useTailReserveContentMeasurement'
 import { useViewportStateEmitter } from './internal/useViewportStateEmitter'
 import { VirtualRows } from './internal/VirtualRows'
-import { readScrollbarInlineSize, useRootRegistration } from './Root'
+import { readScrollbarInlineSize } from './Root'
 import type {
   ItemKey,
   ScrollAlign,
@@ -104,11 +106,9 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const didInitialScrollRef = useRef(false)
   const lastScrollTopRef = useRef(0)
   const scrollDirectionRef = useRef<ScrollDirection>(null)
-  const activeTailReserveKeyRef = useRef<ItemKey | null>(null)
   const measuredTailReserveKeyRef = useRef<ItemKey | null>(null)
   const scrollbarInlineSizeRef = useRef(0)
   const tailReserveContentSizeRef = useRef(0)
-  const tailReserveMinHeightRef = useRef(0)
   const tailReserveConsumedBeforeTailRef = useRef(0)
   const tailReserveHeadKeyRef = useRef<ItemKey | null>(null)
   const [reservedTailKey, setReservedTailKey] = useState<ItemKey | null>(null)
@@ -142,7 +142,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
   function readUnconsumedTailReserve() {
     return resolveUnconsumedTailReserve({
-      activeTailReserveKey: activeTailReserveKeyRef.current,
+      activeTailReserveKey: activeTailKeyRef.current,
       contentSize: tailReserveContentSizeRef.current,
       enabled: tailReserveEnabled,
       minHeight: tailReserveMinHeightRef.current,
@@ -561,35 +561,47 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     }
   }, [])
 
+  function getScrollElement() {
+    return scrollRef.current
+  }
+
+  function measure() {
+    virtualizer.measure()
+  }
+
+  function scrollToHead(options?: ScrollAnimation) {
+    scrollToTarget(() => 0, options)
+  }
+
+  function scrollToTail(options?: ScrollAnimation) {
+    scrollToTarget(getMaxScrollTop, options, () => {
+      requestAnimationFrame(() => {
+        const element = scrollRef.current
+
+        if (!element) {
+          return
+        }
+
+        const targetTop = getMaxScrollTop()
+
+        if (Math.abs(element.scrollTop - targetTop) > 1) {
+          element.scrollTop = targetTop
+        }
+
+        captureAnchor()
+        emitState()
+      })
+    })
+  }
+
   useImperativeHandle(forwardedRef, () => ({
-    getScrollElement: () => scrollRef.current,
+    getScrollElement,
     getState: readState,
-    measure: () => virtualizer.measure(),
-    scrollToHead: (options) => {
-      scrollToTarget(() => 0, options)
-    },
+    measure,
+    scrollToHead,
     scrollToIndex,
     scrollToItem,
-    scrollToTail: (options) => {
-      scrollToTarget(getMaxScrollTop, options, () => {
-        requestAnimationFrame(() => {
-          const element = scrollRef.current
-
-          if (!element) {
-            return
-          }
-
-          const targetTop = getMaxScrollTop()
-
-          if (Math.abs(element.scrollTop - targetTop) > 1) {
-            element.scrollTop = targetTop
-          }
-
-          captureAnchor()
-          emitState()
-        })
-      })
-    },
+    scrollToTail,
     stopScrollAnimation,
   }))
 
@@ -644,7 +656,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     keyToIndex,
     previousLastKeyRef.current,
   )
-  const activeReservedTailKey =
+  const activeTailKey =
     tailReserveEnabled && renderAppendedToTail && renderLastKey !== null
       ? renderLastKey
       : reservedTailKey
@@ -677,19 +689,19 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     )
   }
   const appendedHeadStart = readVirtualItemStart(activeTailHeadKey)
-  const activeTailStart = readVirtualItemStart(activeReservedTailKey)
+  const activeTailStart = readVirtualItemStart(activeTailKey)
   const consumedBeforeTail =
     appendedHeadStart !== null && activeTailStart !== null
       ? Math.max(0, activeTailStart - appendedHeadStart)
       : tailReserveConsumedBeforeTailRef.current
   const tailReserveMinHeight = readTailReserveMinHeight(consumedBeforeTail)
 
-  activeTailReserveKeyRef.current = activeReservedTailKey
+  const activeTailKeyRef = useLatest(activeTailKey)
+  const tailReserveMinHeightRef = useLatest(tailReserveMinHeight)
   tailReserveHeadKeyRef.current =
-    activeReservedTailKey === null ? null : activeTailHeadKey
+    activeTailKey === null ? null : activeTailHeadKey
   tailReserveConsumedBeforeTailRef.current =
-    activeReservedTailKey === null ? 0 : consumedBeforeTail
-  tailReserveMinHeightRef.current = tailReserveMinHeight
+    activeTailKey === null ? 0 : consumedBeforeTail
 
   const setActiveTailReserveContent = useCallback(
     (element: HTMLDivElement | null) => {
@@ -699,7 +711,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   )
 
   useTailReserveContentMeasurement({
-    activeReservedTailKey,
+    activeTailKey,
     measuredTailReserveKeyRef,
     scheduleStateEmit,
     tailReserveContentElement,
@@ -723,7 +735,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       }}
     >
       <VirtualRows
-        activeReservedTailKey={activeReservedTailKey}
+        activeTailKey={activeTailKey}
         contentClassName={contentClassName}
         getItemKey={getItemKey}
         itemClassName={itemClassName}
