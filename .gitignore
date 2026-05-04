@@ -17,6 +17,7 @@ test-results/
 # Vite / local caches
 .vite/
 .cache/
+.playwright-mcp/
 
 # Logs
 logs/
