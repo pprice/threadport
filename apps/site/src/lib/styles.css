@@ -452,10 +452,42 @@ h1 {
 .phoneFrame {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
+  border: 0;
+  border-radius: 10px;
   background: var(--surface);
-  box-shadow: 0 1.65rem 4rem var(--shadow);
+  box-shadow: 0 0.4rem 1rem var(--shadow);
+}
+
+.previewFrame::before,
+.demoFrame::before,
+.phoneFrame::before,
+.fullscreenFrame::before,
+.previewFrame::after,
+.demoFrame::after,
+.phoneFrame::after,
+.fullscreenFrame::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 1.5rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.previewFrame::before,
+.demoFrame::before,
+.phoneFrame::before,
+.fullscreenFrame::before {
+  inset-block-start: 0;
+  background: linear-gradient(180deg, var(--surface), transparent);
+}
+
+.previewFrame::after,
+.demoFrame::after,
+.phoneFrame::after,
+.fullscreenFrame::after {
+  inset-block-end: 0;
+  background: linear-gradient(0deg, var(--surface), transparent);
 }
 
 .previewFrame {
@@ -802,30 +834,57 @@ h1 {
   height: 100%;
   overscroll-behavior: contain;
   overflow-anchor: none;
-  scrollbar-color: color-mix(in oklch, var(--quiet) 42%, transparent)
-    transparent;
+  scrollbar-color: var(--muted) transparent;
+  scrollbar-width: thin;
   scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
 
 .exampleViewport::-webkit-scrollbar {
-  width: 0.72rem;
-  height: 0.72rem;
+  width: 12px;
+  height: 12px;
 }
 
-.exampleViewport::-webkit-scrollbar-track {
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:start,
+::-webkit-scrollbar-button:end,
+::-webkit-scrollbar-button:vertical:decrement,
+::-webkit-scrollbar-button:vertical:increment,
+::-webkit-scrollbar-button:horizontal:decrement,
+::-webkit-scrollbar-button:horizontal:increment,
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:double-button {
+  display: none;
+  width: 0;
+  height: 0;
   background: transparent;
 }
 
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.exampleViewport::-webkit-scrollbar-track {
+  background-image: linear-gradient(
+    to right,
+    transparent calc(50% - 0.5px),
+    color-mix(in oklch, var(--muted) 22%, transparent) calc(50% - 0.5px),
+    color-mix(in oklch, var(--muted) 22%, transparent) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
 .exampleViewport::-webkit-scrollbar-thumb {
-  border: 0.22rem solid transparent;
-  border-radius: 999px;
+  background: linear-gradient(to bottom, var(--accent) 0 4px, var(--muted) 4px)
+    no-repeat;
   background-clip: content-box;
-  background-color: color-mix(in oklch, var(--quiet) 42%, transparent);
+  border: 4px solid transparent;
+  border-radius: 999px;
+  min-height: 36px;
 }
 
 .exampleViewport::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(in oklch, var(--quiet) 62%, transparent);
+  border-width: 3px;
 }
 
 .exampleContent {
@@ -849,8 +908,12 @@ h1 {
   scrollbar-color: transparent transparent;
 }
 
+.viewportSettling .exampleViewport::-webkit-scrollbar-track {
+  background-image: none;
+}
+
 .viewportSettling .exampleViewport::-webkit-scrollbar-thumb {
-  background-color: transparent;
+  background: transparent;
 }
 
 .exampleRow {
@@ -1121,7 +1184,7 @@ h1 {
 
 .insetHeadDock,
 .insetTailDock {
-  z-index: 1;
+  z-index: 2;
   display: flex;
   justify-content: center;
   padding: 0.7rem clamp(1rem, 3vw, 2rem);
@@ -1464,11 +1527,11 @@ h1 {
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  border: 0;
+  border-radius: 10px;
   margin: clamp(0.5rem, 1.5vw, 1rem);
   overflow: hidden;
-  box-shadow: 0 1.65rem 4rem var(--shadow);
+  box-shadow: 0 0.4rem 1rem var(--shadow);
 }
 
 .fullscreenHeader {
@@ -1498,10 +1561,10 @@ h1 {
 
 .resizerHost {
   width: 100%;
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
+  border: 0;
+  border-radius: 10px;
   background: var(--surface);
-  box-shadow: 0 1.65rem 4rem var(--shadow);
+  box-shadow: 0 0.4rem 1rem var(--shadow);
   overflow: hidden;
   resize: vertical;
 }
