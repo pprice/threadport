@@ -11,20 +11,9 @@ const fontFiles = [
 ]
 
 export default defineConfig({
-  build: {
-    rollupOptions: {
-      input: {
-        examples: 'examples/index.html',
-        index: 'index.html',
-      },
-    },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom/client', 'react/jsx-dev-runtime', 'wouter'],
-  },
   plugins: [
     {
-      name: 'threadport-example-font-preload',
+      name: 'threadport-font-preload',
       transformIndexHtml() {
         return [
           {
@@ -55,47 +44,19 @@ export default defineConfig({
         ]
       },
     },
-    {
-      name: 'threadport-examples-spa-fallback',
-      configureServer(server) {
-        server.middlewares.use(
-          (req: { method?: string; url?: string }, _res, next: () => void) => {
-            const url = req.url ?? ''
-
-            if (
-              url.startsWith('/examples/') &&
-              !url.startsWith('/examples/src/') &&
-              !url.includes('.') &&
-              req.method === 'GET'
-            ) {
-              req.url = '/examples/index.html'
-            }
-
-            next()
-          },
-        )
-      },
-      configurePreviewServer(server) {
-        server.middlewares.use(
-          (req: { method?: string; url?: string }, _res, next: () => void) => {
-            const url = req.url ?? ''
-
-            if (
-              url.startsWith('/examples/') &&
-              !url.includes('.') &&
-              req.method === 'GET'
-            ) {
-              req.url = '/examples/index.html'
-            }
-
-            next()
-          },
-        )
-      },
-    },
     react(),
   ],
   resolve: {
     dedupe: ['react', 'react-dom'],
+  },
+  server: {
+    host: '127.0.0.1',
+    port: 5176,
+    strictPort: true,
+  },
+  preview: {
+    host: '127.0.0.1',
+    port: 5176,
+    strictPort: true,
   },
 })

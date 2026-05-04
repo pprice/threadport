@@ -1,5 +1,6 @@
 import { type ReactElement, useEffect, useState } from 'react'
 import { Link, Route, Router, Switch, useLocation } from 'wouter'
+import { examples, REPO_URL } from './examples-meta'
 import DataLoadingExample from './pages/data-loading'
 import FullscreenExample from './pages/fullscreen'
 import InsetsExample from './pages/insets'
@@ -9,7 +10,6 @@ import MobileExample from './pages/mobile'
 import PrependExample from './pages/prepend'
 import StandardExample from './pages/standard'
 import VariableHeightExample from './pages/variable-height'
-import { examples, mountPage, REPO_URL } from './shared'
 
 const ROUTE_COMPONENTS: Record<string, () => ReactElement> = {
   'data-loading': DataLoadingExample,
@@ -176,8 +176,10 @@ function RedirectToDefault() {
   return null
 }
 
-mountPage(
-  <Router base="/examples">
-    <App />
-  </Router>,
-)
+export function PlaygroundApp() {
+  return (
+    <Router base="/examples">
+      <App />
+    </Router>
+  )
+}

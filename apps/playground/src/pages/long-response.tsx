@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
 import {
   Composer,
   createMessage,
   createTranscript,
   type DemoMessage,
   EXAMPLE_ITEM_GAP,
-  ExamplePage,
   estimateMessageSize,
   getMessageKey,
   InsetOverlays,
@@ -17,7 +15,9 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '../shared'
+} from '@phipri/react-threadport-demo-shared'
+import { useEffect, useRef, useState } from 'react'
+import { ExamplePage } from '../ExamplePage'
 
 const longResponseChunks = [
   ' Tail reserve is most useful when a new assistant answer begins with a lot of room below it, then gradually consumes that room as real content fills in.',

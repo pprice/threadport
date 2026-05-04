@@ -7,27 +7,24 @@
     "types": ["vite/client"],
     "ignoreDeprecations": "6.0",
     "skipLibCheck": true,
-
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-
-    /* Linting */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": [
-    "src",
-    "examples",
-    "fixtures",
-    "tests",
-    "vite.config.ts",
-    "vitest.config.ts",
-    "tsup.config.ts"
-  ]
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@phipri/react-threadport": ["./packages/react-threadport/src/index.ts"],
+      "@phipri/react-threadport-demo-shared": [
+        "./packages/demo-shared/src/index.tsx"
+      ],
+      "@phipri/react-threadport-demo-shared/styles.css": [
+        "./packages/demo-shared/src/styles.css"
+      ]
+    }
+  }
 }

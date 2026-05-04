@@ -1,3 +1,4 @@
+import * as ThreadPort from '@phipri/react-threadport'
 import {
   type Dispatch,
   type FormEvent,
@@ -6,13 +7,9 @@ import {
   type ReactNode,
   type RefObject,
   type SetStateAction,
-  StrictMode,
   useEffect,
   useState,
 } from 'react'
-import { createRoot } from 'react-dom/client'
-import * as ThreadPort from '../../src'
-import './styles.css'
 
 export { ThreadPort }
 
@@ -27,143 +24,6 @@ export type DemoMessage = {
   title?: string
   variant?: 'code' | 'note' | 'visual'
 }
-
-type ExampleMeta = {
-  description: string
-  href: string
-  id: string
-  integration: string[]
-  label: string
-  ownedBy: 'host' | 'viewport'
-  scope: string
-  sourcePath: string
-}
-
-export const examples: ExampleMeta[] = [
-  {
-    id: 'standard',
-    label: 'Standard',
-    description: 'A GPT-style transcript with submitted prompts aligned high.',
-    href: '/examples/standard',
-    integration: [
-      'items',
-      'estimateSize',
-      'getItemKey',
-      'renderItem',
-      'scrollToItem',
-      'tailReserve',
-    ],
-    ownedBy: 'host',
-    scope: 'Baseline',
-    sourcePath: 'examples/src/pages/standard.tsx',
-  },
-  {
-    id: 'insets',
-    label: 'Insets',
-    description: 'Visible head and tail insets for app chrome.',
-    href: '/examples/insets',
-    integration: [
-      'headInset',
-      'tailInset',
-      'Overlay head',
-      'Overlay tail',
-      'scrollToItem',
-    ],
-    ownedBy: 'viewport',
-    scope: 'Chrome',
-    sourcePath: 'examples/src/pages/insets.tsx',
-  },
-  {
-    id: 'long-response',
-    label: 'Long response',
-    description: 'Tail reserve with a deliberately long assistant answer.',
-    href: '/examples/long-response',
-    integration: [
-      'tailReserve',
-      'minHeight',
-      'scrollToItem',
-      'estimateSize',
-      'measureElement',
-    ],
-    ownedBy: 'viewport',
-    scope: 'Tail reserve',
-    sourcePath: 'examples/src/pages/long-response.tsx',
-  },
-  {
-    id: 'jump-to-bottom',
-    label: 'Jump to bottom',
-    description: 'Expose a jump control when the reader leaves the tail.',
-    href: '/examples/jump-to-bottom',
-    integration: [
-      'ViewportHandle',
-      'scrollToTail',
-      'onStateChange',
-      'Overlay fill',
-      'useReducedMotion',
-    ],
-    ownedBy: 'host',
-    scope: 'Policy',
-    sourcePath: 'examples/src/pages/jump-to-bottom.tsx',
-  },
-  {
-    id: 'mobile',
-    label: 'Mobile',
-    description: 'A phone-sized GPT shell with frame-relative overlays.',
-    href: '/examples/mobile',
-    integration: ['headInset', 'tailInset', 'Overlay', 'Root', 'Viewport'],
-    ownedBy: 'host',
-    scope: 'Responsive',
-    sourcePath: 'examples/src/pages/mobile.tsx',
-  },
-  {
-    id: 'prepend',
-    label: 'Prepend',
-    description: 'Load older messages above while preserving the anchor.',
-    href: '/examples/prepend',
-    integration: ['preserveScrollOnPrepend', 'estimateSize', 'initialAnchor'],
-    ownedBy: 'viewport',
-    scope: 'History',
-    sourcePath: 'examples/src/pages/prepend.tsx',
-  },
-  {
-    id: 'data-loading',
-    label: 'Data loading',
-    description: 'Fetch older pages as the reader scrolls backward.',
-    href: '/examples/data-loading',
-    integration: [
-      'onStateChange',
-      'scrollOffset',
-      'auto load threshold',
-      'preserveScrollOnPrepend',
-      'headReserve',
-      'loading state',
-    ],
-    ownedBy: 'host',
-    scope: 'Loading',
-    sourcePath: 'examples/src/pages/data-loading.tsx',
-  },
-  {
-    id: 'fullscreen',
-    label: 'Fullscreen',
-    description:
-      'Viewport fills the full document height — phone, tablet, or desktop.',
-    href: '/examples/fullscreen',
-    integration: ['Root', 'Viewport', 'Overlay tail', 'tailReserve'],
-    ownedBy: 'host',
-    scope: 'Layout',
-    sourcePath: 'examples/src/pages/fullscreen.tsx',
-  },
-  {
-    id: 'variable-height',
-    label: 'Variable height',
-    description: 'Resize the host container live; the viewport tracks it.',
-    href: '/examples/variable-height',
-    integration: ['Root', 'Viewport', 'min-height', 'overflow'],
-    ownedBy: 'host',
-    scope: 'Layout',
-    sourcePath: 'examples/src/pages/variable-height.tsx',
-  },
-]
 
 const assistantBodies = [
   'Threadport keeps the scroll mechanics separate from your transcript UI. The host owns message chrome, composer placement, and product decisions.',
@@ -398,145 +258,6 @@ export const MessageView = memo(function MessageView({
   )
 })
 
-export function ExamplePage({
-  activeId,
-  aside,
-  children,
-  notes,
-  summary,
-  title,
-}: {
-  activeId: string
-  aside?: ReactNode
-  children: ReactNode
-  notes: string[]
-  summary: string
-  title: string
-}) {
-  const activeExample = examples.find((example) => example.id === activeId)
-
-  return (
-    <div className="exampleLayout">
-      <section className="examplePanel" aria-labelledby={`${activeId}-title`}>
-        <h1 id={`${activeId}-title`}>{title}</h1>
-        <p className="lede">{summary}</p>
-        <ul className="noteList">
-          {notes.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-        {activeExample && (
-          <section className="integrationPanel" aria-label="Integration">
-            <div className="integrationHeader">
-              <span>Source</span>
-              <code>{activeExample.sourcePath}</code>
-            </div>
-            <div>
-              <p>Inspect</p>
-              <ul className="integrationList">
-                {activeExample.integration.map((item) => (
-                  <li key={item}>
-                    <code>{item}</code>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
-        {aside && (
-          <aside className="demoAside" aria-label={`${title} controls`}>
-            {aside}
-          </aside>
-        )}
-      </section>
-      <section className="demoStage" aria-label={`${title} demo`}>
-        {children}
-      </section>
-    </div>
-  )
-}
-
-const INSTALL_COMMAND = 'npm i @phipri/react-threadport'
-export const REPO_URL = 'https://github.com/pprice/threadport'
-
-function InstallCopy() {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) {
-      return
-    }
-
-    navigator.clipboard
-      .writeText(INSTALL_COMMAND)
-      .then(() => {
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1400)
-      })
-      .catch(() => {})
-  }
-
-  return (
-    <button
-      aria-label={copied ? 'Copied install command' : 'Copy install command'}
-      className="installCopy"
-      onClick={handleCopy}
-      type="button"
-    >
-      <code>{INSTALL_COMMAND}</code>
-      <span aria-hidden="true" className="installCopyHint">
-        {copied ? 'Copied' : 'Copy'}
-      </span>
-    </button>
-  )
-}
-
-export function SiteHeader({ activeId }: { activeId?: string }) {
-  return (
-    <header className="siteHeader">
-      <a className="brand" href="/">
-        <span className="brandMark" aria-hidden="true" />
-        Threadport
-      </a>
-      {activeId ? (
-        <nav aria-label="Examples">
-          {examples.map((example) => (
-            <a
-              key={example.id}
-              aria-current={activeId === example.id ? 'page' : undefined}
-              href={example.href}
-            >
-              {example.label}
-            </a>
-          ))}
-        </nav>
-      ) : (
-        <span aria-hidden="true" />
-      )}
-      <div className="headerActions">
-        <a
-          className="iconLink"
-          href={REPO_URL}
-          rel="noreferrer"
-          target="_blank"
-        >
-          <svg
-            aria-hidden="true"
-            fill="currentColor"
-            height="16"
-            viewBox="0 0 16 16"
-            width="16"
-          >
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-          </svg>
-          <span className="srOnly">View on GitHub</span>
-        </a>
-        <InstallCopy />
-      </div>
-    </header>
-  )
-}
-
 export function InsetOverlays({
   headInset,
   labeled = false,
@@ -704,14 +425,4 @@ export function useReducedMotion() {
   }, [])
 
   return reducedMotion
-}
-
-export function mountPage(children: ReactNode) {
-  const rootElement = document.getElementById('root')
-
-  if (!rootElement) {
-    throw new Error('Root element not found')
-  }
-
-  createRoot(rootElement).render(<StrictMode>{children}</StrictMode>)
 }

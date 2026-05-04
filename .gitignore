@@ -5,11 +5,11 @@ node_modules/
 
 # Build output
 dist/
+apps/*/dist/
+packages/*/dist/
 dist-ssr/
 build/
 coverage/
-dist-playground/
-dist-examples/
 playwright-report/
 test-results/
 *.tsbuildinfo

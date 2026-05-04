@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import {
   createMessage,
   type DemoMessage,
@@ -7,12 +6,11 @@ import {
   getMessageKey,
   InsetOverlays,
   MessageView,
-  mountPage,
-  REPO_URL,
-  SiteHeader,
   ThreadPort,
   useReducedMotion,
-} from './shared'
+} from '@phipri/react-threadport-demo-shared'
+import { useEffect, useRef, useState } from 'react'
+import { REPO_URL, SiteHeader } from './Header'
 
 type PreviewExchange = {
   answer: string
@@ -104,7 +102,7 @@ function estimateBodyHeight(body: string): number {
   return 96 + Math.ceil(body.length / 74) * 24
 }
 
-function Home() {
+export function Home() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [previewMessages, setPreviewMessages] = useState<DemoMessage[]>(
@@ -309,5 +307,3 @@ function Home() {
     </div>
   )
 }
-
-mountPage(<Home />)

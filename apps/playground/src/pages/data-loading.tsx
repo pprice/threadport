@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
@@ -7,7 +6,6 @@ import {
   DATA_LOADING_HEAD_RESERVE,
   type DemoMessage,
   EXAMPLE_ITEM_GAP,
-  ExamplePage,
   estimateMessageSize,
   estimateVirtualBatchSize,
   getMessageKey,
@@ -19,7 +17,9 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '../shared'
+} from '@phipri/react-threadport-demo-shared'
+import { useEffect, useRef, useState } from 'react'
+import { ExamplePage } from '../ExamplePage'
 
 const DATA_LOADING_HEAD_INSET = 78
 const AUTO_LOAD_OLDER_THRESHOLD = 1_800

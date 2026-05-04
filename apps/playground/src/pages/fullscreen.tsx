@@ -1,11 +1,9 @@
-import { useRef, useState } from 'react'
 import {
   Composer,
   createGptExchange,
   createTranscript,
   type DemoMessage,
   EXAMPLE_ITEM_GAP,
-  ExamplePage,
   estimateMessageSize,
   getMessageKey,
   MessageView,
@@ -14,7 +12,9 @@ import {
   ThreadPort,
   useInitialViewportSettled,
   useReducedMotion,
-} from '../shared'
+} from '@phipri/react-threadport-demo-shared'
+import { useRef, useState } from 'react'
+import { ExamplePage } from '../ExamplePage'
 
 export default function FullscreenExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
