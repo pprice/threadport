@@ -456,7 +456,7 @@ export function SiteHeader({ activeId }: { activeId?: string }) {
           </a>
         ))}
       </nav>
-      <code>npm i threadport</code>
+      <code>npm i @phipri/react-threadport</code>
     </header>
   )
 }

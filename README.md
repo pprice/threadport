@@ -8,13 +8,13 @@ styling, and layout.
 ## Install
 
 ```sh
-npm install threadport react
+npm install @phipri/react-threadport react
 ```
 
 ## Usage
 
 ```tsx
-import * as ThreadPort from 'threadport'
+import * as ThreadPort from '@phipri/react-threadport'
 import { useRef } from 'react'
 
 type Message = { id: string; body: string }
