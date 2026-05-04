@@ -19,7 +19,7 @@ import {
 } from './internal/constants'
 import { computeItemKeyTransition } from './internal/itemKeyTransitions'
 import { useRootRegistration } from './internal/rootContext'
-import { nextFrame } from './internal/scheduleFrame'
+import { afterTwoFrames, nextFrame } from './internal/scheduleFrame'
 import {
   type ActiveScrollAnimation,
   animateScrollTop,
@@ -97,6 +97,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const previousLastKeyRef = useRef<ItemKey | null>(null)
   const didInitialScrollRef = useRef(false)
   const lastScrollTopRef = useRef(0)
+  const pendingSizeAdjustmentRef = useRef(0)
   const scrollDirectionRef = useRef<ScrollDirection>(null)
   const measuredTailReserveKeyRef = useRef<ItemKey | null>(null)
   const tailReserveContentSizeRef = useRef(0)
@@ -305,8 +306,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     paddingStart: headPadding,
     scrollPaddingEnd: tailInset,
     scrollPaddingStart: headInset,
-    useAnimationFrameWithResizeObserver:
-      virtualizerOptions?.useAnimationFrameWithResizeObserver ?? true,
   })
 
   const { captureAnchor, captureAnchorThrottle, restoreIfPrepended } =
@@ -317,6 +316,24 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       scrollRef,
       virtualizer,
     })
+
+  function snapToTail() {
+    const element = scrollRef.current
+
+    if (!element) {
+      return
+    }
+
+    const targetTop = getMaxScrollTop()
+
+    if (Math.abs(element.scrollTop - targetTop) > 0.5) {
+      element.scrollTop = targetTop
+      lastScrollTopRef.current = targetTop
+    }
+
+    captureAnchor()
+    emitState()
+  }
 
   useLayoutEffect(() => {
     reservedTailKeyRef.current = reservedTailKey
@@ -356,7 +373,11 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
       const scrollOffset = instance.scrollOffset ?? 0
 
-      return item.start < scrollOffset
+      if (item.start < scrollOffset) {
+        pendingSizeAdjustmentRef.current += _delta
+      }
+
+      return false
     }
   }, [virtualizer])
 
@@ -410,13 +431,32 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       return
     }
 
-    didInitialScrollRef.current = true
-
     if (initialAnchor === 'tail') {
-      nextFrame(() => {
-        scrollToTarget(getMaxScrollTop, { duration: 0 })
+      let cancelSecondSnap: (() => void) | null = null
+      let cancelThirdSnap: (() => void) | null = null
+      let didRun = false
+      const cancelFirstSnap = nextFrame(() => {
+        didRun = true
+        didInitialScrollRef.current = true
+        scrollToTarget(getMaxScrollTop, { duration: 0 }, snapToTail)
+        cancelSecondSnap = afterTwoFrames(() => {
+          snapToTail()
+          cancelThirdSnap = afterTwoFrames(snapToTail)
+        })
       })
+
+      return () => {
+        cancelFirstSnap()
+        cancelSecondSnap?.()
+        cancelThirdSnap?.()
+
+        if (!didRun) {
+          didInitialScrollRef.current = false
+        }
+      }
     }
+
+    didInitialScrollRef.current = true
   }, [initialAnchor, items.length])
 
   useEffect(() => {
@@ -490,6 +530,21 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
   const virtualItems = virtualizer.getVirtualItems()
   const totalSize = virtualizer.getTotalSize()
+
+  useLayoutEffect(() => {
+    const delta = pendingSizeAdjustmentRef.current
+    const element = scrollRef.current
+
+    if (!element || Math.abs(delta) < 0.5) {
+      pendingSizeAdjustmentRef.current = 0
+      return
+    }
+
+    pendingSizeAdjustmentRef.current = 0
+    element.scrollTop += delta
+    captureAnchor()
+    scheduleStateEmit()
+  }, [captureAnchor, scheduleStateEmit, totalSize, virtualItems.length])
 
   useLayoutEffect(() => {
     scheduleStateEmit()

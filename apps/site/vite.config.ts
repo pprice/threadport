@@ -10,6 +10,11 @@ const fontFiles = [
   'https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3twJwlBFgg.woff2',
 ]
 
+const threadportSource = new URL(
+  '../../packages/react-threadport/src/index.ts',
+  import.meta.url,
+).pathname.replace(/^\/([A-Za-z]:)/, '$1')
+
 export default defineConfig({
   plugins: [
     {
@@ -47,6 +52,9 @@ export default defineConfig({
     react(),
   ],
   resolve: {
+    alias: {
+      '@phipri/react-threadport': threadportSource,
+    },
     dedupe: ['react', 'react-dom'],
   },
   server: {
