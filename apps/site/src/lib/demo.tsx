@@ -18,12 +18,16 @@ export const EXAMPLE_ITEM_GAP = 28
 
 export type DemoMessage = {
   body: string
+  /** ms epoch when the message was added. Stale (0) for synthetic backfill. */
+  createdAt: number
   estimate: number
   id: string
   role: 'assistant' | 'system' | 'user'
   title?: string
   variant?: 'code' | 'note' | 'visual'
 }
+
+const FRESH_WINDOW_MS = 600
 
 const assistantBodies = [
   'Threadport keeps the scroll mechanics separate from your transcript UI. The host owns message chrome, composer placement, and product decisions.',
@@ -75,6 +79,7 @@ export function createMessage(
 ): DemoMessage {
   return {
     body,
+    createdAt: Date.now(),
     estimate: estimateBodySize(body, variant),
     id: nextId(role),
     role,
@@ -83,13 +88,19 @@ export function createMessage(
   }
 }
 
+function asStale(message: DemoMessage): DemoMessage {
+  return { ...message, createdAt: 0 }
+}
+
 export function createTranscript(count = 36) {
   const messages: DemoMessage[] = [
-    createMessage(
-      'system',
-      'This viewport is headless. Everything visible around it belongs to the integrator.',
-      'note',
-      'Boundary',
+    asStale(
+      createMessage(
+        'system',
+        'This viewport is headless. Everything visible around it belongs to the integrator.',
+        'note',
+        'Boundary',
+      ),
     ),
   ]
 
@@ -106,15 +117,17 @@ export function createTranscript(count = 36) {
           : undefined
 
     messages.push(
-      createMessage(
-        isUser ? 'user' : 'assistant',
-        `${body}${index % 6 === 0 ? ' This row has extra copy so measurement has real work to do.' : ''}`,
-        variant,
-        variant === 'visual'
-          ? 'Arbitrary content'
-          : variant === 'code'
-            ? 'Measured block'
-            : undefined,
+      asStale(
+        createMessage(
+          isUser ? 'user' : 'assistant',
+          `${body}${index % 6 === 0 ? ' This row has extra copy so measurement has real work to do.' : ''}`,
+          variant,
+          variant === 'visual'
+            ? 'Arbitrary content'
+            : variant === 'code'
+              ? 'Measured block'
+              : undefined,
+        ),
       ),
     )
   }
@@ -124,11 +137,13 @@ export function createTranscript(count = 36) {
 
 export function createOlderBatch(seed: number) {
   return Array.from({ length: 16 }, (_, index) =>
-    createMessage(
-      index % 4 === 0 ? 'user' : 'assistant',
-      `Older message ${seed + index + 1}. This batch is inserted above the viewport without changing the visible anchor.`,
-      index % 8 === 0 ? 'code' : undefined,
-      index % 8 === 0 ? 'Older measured block' : undefined,
+    asStale(
+      createMessage(
+        index % 4 === 0 ? 'user' : 'assistant',
+        `Older message ${seed + index + 1}. This batch is inserted above the viewport without changing the visible anchor.`,
+        index % 8 === 0 ? 'code' : undefined,
+        index % 8 === 0 ? 'Older measured block' : undefined,
+      ),
     ),
   )
 }
@@ -220,10 +235,12 @@ export const MessageView = memo(function MessageView({
   message: DemoMessage
 }) {
   const isUser = message.role === 'user'
+  const isFresh = Date.now() - message.createdAt < FRESH_WINDOW_MS
 
   return (
     <article
       className={`message message-${message.role}`}
+      data-fresh={isFresh ? 'true' : undefined}
       data-message-id={message.id}
       data-message-role={message.role}
       data-message-variant={message.variant}
