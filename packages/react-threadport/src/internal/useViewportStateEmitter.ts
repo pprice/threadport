@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ViewportState } from '../types'
+import { useLatest } from './useLatest'
 import { shallowEqualState } from './viewportState'
 
 type UseViewportStateEmitterArgs = {
@@ -14,24 +15,28 @@ export function useViewportStateEmitter({
   const lastStateRef = useRef<ViewportState | null>(null)
   const stateFrameRef = useRef<number | null>(null)
   const settledStateFrameRef = useRef<number | null>(null)
+  const onStateChangeRef = useLatest(onStateChange)
+  const readStateRef = useLatest(readState)
 
-  function emitState() {
-    if (!onStateChange) {
+  const emitState = useCallback(() => {
+    const handler = onStateChangeRef.current
+
+    if (!handler) {
       return
     }
 
-    const next = readState()
+    const next = readStateRef.current()
 
     if (shallowEqualState(lastStateRef.current, next)) {
       return
     }
 
     lastStateRef.current = next
-    onStateChange(next)
-  }
+    handler(next)
+  }, [onStateChangeRef, readStateRef])
 
-  function scheduleStateEmit() {
-    if (!onStateChange || stateFrameRef.current !== null) {
+  const scheduleStateEmit = useCallback(() => {
+    if (!onStateChangeRef.current || stateFrameRef.current !== null) {
       return
     }
 
@@ -39,10 +44,10 @@ export function useViewportStateEmitter({
       stateFrameRef.current = null
       emitState()
     })
-  }
+  }, [emitState, onStateChangeRef])
 
-  function scheduleSettledStateEmit() {
-    if (!onStateChange || settledStateFrameRef.current !== null) {
+  const scheduleSettledStateEmit = useCallback(() => {
+    if (!onStateChangeRef.current || settledStateFrameRef.current !== null) {
       return
     }
 
@@ -52,7 +57,7 @@ export function useViewportStateEmitter({
         emitState()
       })
     })
-  }
+  }, [emitState, onStateChangeRef])
 
   useEffect(() => {
     return () => {

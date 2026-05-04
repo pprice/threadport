@@ -71,7 +71,7 @@ export function animateScrollTop(
 
   function cleanup() {
     cancelEvents.forEach((eventName) => {
-      element.removeEventListener(eventName, cancelFromUser)
+      element.removeEventListener(eventName, cancel)
     })
   }
 
@@ -95,10 +95,6 @@ export function animateScrollTop(
     finish()
   }
 
-  function cancelFromUser() {
-    cancel()
-  }
-
   function frame(now: number) {
     if (cancelled) {
       return
@@ -118,7 +114,7 @@ export function animateScrollTop(
   }
 
   cancelEvents.forEach((eventName) => {
-    element.addEventListener(eventName, cancelFromUser, { passive: true })
+    element.addEventListener(eventName, cancel, { passive: true })
   })
 
   animationFrame = requestAnimationFrame(frame)

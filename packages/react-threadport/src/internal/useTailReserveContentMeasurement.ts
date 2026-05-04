@@ -7,7 +7,6 @@ type UseTailReserveContentMeasurementArgs = {
   scheduleStateEmit: () => void
   tailReserveContentElement: HTMLDivElement | null
   tailReserveContentSizeRef: RefObject<number>
-  tailReserveMinHeight: number
 }
 
 export function useTailReserveContentMeasurement({
@@ -16,7 +15,6 @@ export function useTailReserveContentMeasurement({
   scheduleStateEmit,
   tailReserveContentElement,
   tailReserveContentSizeRef,
-  tailReserveMinHeight,
 }: UseTailReserveContentMeasurementArgs) {
   useLayoutEffect(() => {
     if (measuredTailReserveKeyRef.current !== activeReservedTailKey) {
@@ -57,5 +55,5 @@ export function useTailReserveContentMeasurement({
     observer.observe(measuredElement)
 
     return () => observer.disconnect()
-  }, [activeReservedTailKey, tailReserveContentElement, tailReserveMinHeight])
+  }, [activeReservedTailKey, tailReserveContentElement])
 }

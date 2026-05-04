@@ -339,13 +339,10 @@ export function Overlay({
 
     event.preventDefault()
 
-    if (Math.abs(nextScrollTop - currentScrollTop) < 0.5) {
-      scrollElement.dispatchEvent(new Event('scroll', { bubbles: true }))
-      frameContext?.requestViewportStateUpdate()
-      return
+    if (Math.abs(nextScrollTop - currentScrollTop) >= 0.5) {
+      scrollElement.scrollTop = nextScrollTop
     }
 
-    scrollElement.scrollTop = nextScrollTop
     scrollElement.dispatchEvent(new Event('scroll', { bubbles: true }))
     frameContext?.requestViewportStateUpdate()
   }

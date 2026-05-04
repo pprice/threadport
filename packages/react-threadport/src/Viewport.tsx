@@ -17,6 +17,7 @@ import {
   DEFAULT_AT_TAIL_THRESHOLD,
   DEFAULT_ESTIMATE,
 } from './internal/constants'
+import { computeItemKeyTransition } from './internal/itemKeyTransitions'
 import { createFrameThrottle } from './internal/scheduleFrame'
 import {
   type ActiveScrollAnimation,
@@ -103,7 +104,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const didInitialScrollRef = useRef(false)
   const lastScrollTopRef = useRef(0)
   const scrollDirectionRef = useRef<ScrollDirection>(null)
-  const requestStateUpdateRef = useRef<(() => void) | null>(null)
   const activeTailReserveKeyRef = useRef<ItemKey | null>(null)
   const measuredTailReserveKeyRef = useRef<ItemKey | null>(null)
   const scrollbarInlineSizeRef = useRef(0)
@@ -215,13 +215,11 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
   const { emitState, scheduleSettledStateEmit, scheduleStateEmit } =
     useViewportStateEmitter({ onStateChange, readState })
-  const scheduleStateEmitRef = useRef(scheduleStateEmit)
-  scheduleStateEmitRef.current = scheduleStateEmit
 
-  requestStateUpdateRef.current = () => {
+  const requestStateUpdate = useCallback(() => {
     emitState()
     scheduleSettledStateEmit()
-  }
+  }, [emitState, scheduleSettledStateEmit])
 
   const captureAnchorRef = useRef<() => void>(noop)
   const captureAnchorThrottle = useMemo(
@@ -415,7 +413,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
     function measureScrollbarInlineSize() {
       if (updateScrollbarInlineSize()) {
-        scheduleStateEmitRef.current()
+        scheduleStateEmit()
       }
     }
 
@@ -446,11 +444,11 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
     return registerViewportFrame({
       headInset,
-      requestStateUpdate: () => requestStateUpdateRef.current?.(),
+      requestStateUpdate,
       scrollElement: scrollRef.current,
       tailInset,
     })
-  }, [headInset, registerViewportFrame, tailInset])
+  }, [headInset, registerViewportFrame, requestStateUpdate, tailInset])
 
   useLayoutEffect(() => {
     virtualizer.shouldAdjustScrollPositionOnItemSizeChange = (
@@ -477,25 +475,19 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       items.length > 0 && items[0] !== undefined
         ? getItemKey(items[0], 0)
         : null
-    const lastKey =
-      items.length > 0 && items[items.length - 1] !== undefined
-        ? getItemKey(items[items.length - 1], items.length - 1)
-        : null
     const previousFirstKey = previousFirstKeyRef.current
-    const previousLastKey = previousLastKeyRef.current
-    const previousFirstMoved =
+    const prependDetected =
       previousFirstKey !== null &&
       keyToIndex.has(previousFirstKey) &&
       (keyToIndex.get(previousFirstKey) ?? 0) > 0
-    const previousLastIndex =
-      previousLastKey !== null ? keyToIndex.get(previousLastKey) : undefined
-    const appendedToTail =
-      previousLastKey !== null &&
-      previousLastKey !== lastKey &&
-      previousLastIndex !== undefined &&
-      previousLastIndex < items.length - 1
+    const { lastKey, appendedToTail } = computeItemKeyTransition(
+      items,
+      getItemKey,
+      keyToIndex,
+      previousLastKeyRef.current,
+    )
 
-    if (preserveScrollOnPrepend && previousFirstMoved) {
+    if (preserveScrollOnPrepend && prependDetected) {
       const anchor = anchorRef.current
       const element = scrollRef.current
 
@@ -642,24 +634,21 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     virtualItems.length,
   ])
 
-  const renderLastKey =
-    items.length > 0 && items[items.length - 1] !== undefined
-      ? getItemKey(items[items.length - 1], items.length - 1)
-      : null
-  const renderPreviousLastIndex =
-    previousLastKeyRef.current !== null
-      ? keyToIndex.get(previousLastKeyRef.current)
-      : undefined
-  const renderAppendedToTail =
-    previousLastKeyRef.current !== null &&
-    previousLastKeyRef.current !== renderLastKey &&
-    renderPreviousLastIndex !== undefined &&
-    renderPreviousLastIndex < items.length - 1
+  const {
+    lastKey: renderLastKey,
+    previousLastIndex: renderPreviousLastIndex,
+    appendedToTail: renderAppendedToTail,
+  } = computeItemKeyTransition(
+    items,
+    getItemKey,
+    keyToIndex,
+    previousLastKeyRef.current,
+  )
   const activeReservedTailKey =
     tailReserveEnabled && renderAppendedToTail && renderLastKey !== null
       ? renderLastKey
       : reservedTailKey
-  const appendedHeadKey = (() => {
+  const firstAppendedKey = (() => {
     if (!renderAppendedToTail || renderPreviousLastIndex === undefined) {
       return null
     }
@@ -669,7 +658,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
     return item === undefined ? null : getItemKey(item, headIndex)
   })()
-  const activeTailHeadKey = appendedHeadKey ?? tailReserveHeadKeyRef.current
+  const activeTailHeadKey = firstAppendedKey ?? tailReserveHeadKeyRef.current
   const readVirtualItemStart = (itemKey: ItemKey | null) => {
     if (itemKey === null) {
       return null
@@ -715,7 +704,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     scheduleStateEmit,
     tailReserveContentElement,
     tailReserveContentSizeRef,
-    tailReserveMinHeight,
   })
 
   return (
