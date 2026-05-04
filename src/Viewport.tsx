@@ -22,6 +22,7 @@ import {
   animateScrollTop,
   resolveScrollAnimation,
 } from './internal/scrollAnimation'
+import { createFrameThrottle } from './internal/scheduleFrame'
 import { isTailReserveEnabled } from './internal/TailReserve'
 import {
   resolveMaxScrollTop,
@@ -48,6 +49,8 @@ type AnchorSnapshot = {
   itemKey: ItemKey
   scrollDelta: number
 }
+
+function noop() {}
 
 function toVirtualAlign(align: ScrollAlign) {
   if (align === 'head') {
@@ -220,6 +223,18 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     scheduleSettledStateEmit()
   }
 
+  const captureAnchorRef = useRef<() => void>(noop)
+  const captureAnchorThrottle = useMemo(
+    () => createFrameThrottle(() => captureAnchorRef.current()),
+    [],
+  )
+
+  useEffect(() => {
+    return () => {
+      captureAnchorThrottle.cancel()
+    }
+  }, [captureAnchorThrottle])
+
   function captureAnchor() {
     const element = scrollRef.current
 
@@ -254,6 +269,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       scrollDelta: element.scrollTop - anchorItem.start,
     }
   }
+  captureAnchorRef.current = captureAnchor
 
   function restoreAnchorElementTop(index: number, anchor: AnchorSnapshot) {
     const element = scrollRef.current
@@ -598,7 +614,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       lastScrollTopRef.current = element.scrollTop
     }
 
-    captureAnchor()
+    captureAnchorThrottle.call()
     scheduleStateEmit()
     scheduleSettledStateEmit()
   }
