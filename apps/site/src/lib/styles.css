@@ -532,31 +532,37 @@ h1 {
 }
 
 .exampleLayout {
-  width: min(1480px, calc(100% - 1.5rem));
+  width: 100%;
   height: 100%;
   display: grid;
   grid-template-columns: minmax(18rem, 25rem) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   gap: clamp(1rem, 2.8vw, 2.5rem);
   align-items: stretch;
-  margin: 0 auto;
-  padding: clamp(1rem, 2vw, 1.35rem) 0;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in oklch, var(--ink) 14%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
 }
 
 .examplePanel {
   min-width: 0;
-  align-self: start;
+  align-self: stretch;
   position: sticky;
   top: 0;
   max-height: 100%;
   overflow: auto;
   display: grid;
+  align-content: start;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  border: 0;
+  border-inline-end: 1px solid var(--line);
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: 0 1rem 2.5rem oklch(0.25 0.018 245 / 0.055);
+  box-shadow: 0 1.25rem 2.5rem -1rem oklch(0.18 0.007 250 / 0.04);
 }
 
 .examplePanel h1 {
@@ -583,14 +589,15 @@ h1 {
   color: var(--ink);
   line-height: 1.48;
   list-style: none;
+  counter-reset: notes;
 }
 
 .noteList li {
+  counter-increment: notes;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 1.6rem minmax(0, 1fr);
   gap: var(--space-2);
-  padding: 0.62rem 0;
-  border-top: 1px solid var(--line);
+  padding: 0.32rem 0;
   color: var(--muted);
   font-size: 0.88rem;
   letter-spacing: -0.005em;
@@ -598,13 +605,14 @@ h1 {
 }
 
 .noteList li::before {
-  content: "";
-  width: 0.52rem;
-  height: 0.52rem;
-  margin-top: 0.32rem;
-  border: 1px solid color-mix(in oklch, var(--accent) 62%, var(--line));
-  border-radius: 999px;
-  background: var(--ink);
+  content: counter(notes, decimal-leading-zero);
+  padding-top: 0.05rem;
+  color: var(--quiet);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: right;
+  line-height: 1.7;
 }
 
 .integrationPanel {
@@ -618,6 +626,47 @@ h1 {
 .integrationHeader {
   display: grid;
   gap: var(--space-1);
+}
+
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  color: var(--ink);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  transition: color 160ms ease-out;
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.sourceLink::after {
+  content: "↗";
+  color: var(--quiet);
+  font-weight: 500;
+  transition: color 160ms ease-out;
+}
+
+.sourceLink:hover {
+  color: var(--accent);
+}
+
+.sourceLink:hover::after {
+  color: var(--accent);
+}
+
+.sourceLink:focus-visible {
+  color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .integrationHeader span,
@@ -657,6 +706,8 @@ h1 {
   min-width: 0;
   min-height: 0;
   align-self: stretch;
+  padding-block: clamp(1rem, 2vw, 1.35rem);
+  padding-inline-end: clamp(1rem, 2vw, 1.35rem);
 }
 
 .demoFrame {

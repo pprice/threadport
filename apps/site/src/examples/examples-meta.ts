@@ -27,7 +27,7 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'host',
     scope: 'Baseline',
-    sourcePath: 'apps/playground/src/pages/standard.tsx',
+    sourcePath: 'apps/site/src/examples/pages/standard.tsx',
   },
   {
     id: 'insets',
@@ -43,7 +43,7 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'viewport',
     scope: 'Chrome',
-    sourcePath: 'apps/playground/src/pages/insets.tsx',
+    sourcePath: 'apps/site/src/examples/pages/insets.tsx',
   },
   {
     id: 'long-response',
@@ -59,7 +59,7 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'viewport',
     scope: 'Tail reserve',
-    sourcePath: 'apps/playground/src/pages/long-response.tsx',
+    sourcePath: 'apps/site/src/examples/pages/long-response.tsx',
   },
   {
     id: 'jump-to-bottom',
@@ -75,7 +75,7 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'host',
     scope: 'Policy',
-    sourcePath: 'apps/playground/src/pages/jump-to-bottom.tsx',
+    sourcePath: 'apps/site/src/examples/pages/jump-to-bottom.tsx',
   },
   {
     id: 'mobile',
@@ -85,7 +85,7 @@ export const examples: ExampleMeta[] = [
     integration: ['headInset', 'tailInset', 'Overlay', 'Root', 'Viewport'],
     ownedBy: 'host',
     scope: 'Responsive',
-    sourcePath: 'apps/playground/src/pages/mobile.tsx',
+    sourcePath: 'apps/site/src/examples/pages/mobile.tsx',
   },
   {
     id: 'prepend',
@@ -95,7 +95,7 @@ export const examples: ExampleMeta[] = [
     integration: ['preserveScrollOnPrepend', 'estimateSize', 'initialAnchor'],
     ownedBy: 'viewport',
     scope: 'History',
-    sourcePath: 'apps/playground/src/pages/prepend.tsx',
+    sourcePath: 'apps/site/src/examples/pages/prepend.tsx',
   },
   {
     id: 'data-loading',
@@ -112,7 +112,7 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'host',
     scope: 'Loading',
-    sourcePath: 'apps/playground/src/pages/data-loading.tsx',
+    sourcePath: 'apps/site/src/examples/pages/data-loading.tsx',
   },
   {
     id: 'fullscreen',
@@ -123,7 +123,7 @@ export const examples: ExampleMeta[] = [
     integration: ['Root', 'Viewport', 'Overlay tail', 'tailReserve'],
     ownedBy: 'host',
     scope: 'Layout',
-    sourcePath: 'apps/playground/src/pages/fullscreen.tsx',
+    sourcePath: 'apps/site/src/examples/pages/fullscreen.tsx',
   },
   {
     id: 'variable-height',
@@ -133,6 +133,6 @@ export const examples: ExampleMeta[] = [
     integration: ['Root', 'Viewport', 'min-height', 'overflow'],
     ownedBy: 'host',
     scope: 'Layout',
-    sourcePath: 'apps/playground/src/pages/variable-height.tsx',
+    sourcePath: 'apps/site/src/examples/pages/variable-height.tsx',
   },
 ]

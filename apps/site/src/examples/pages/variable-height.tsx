@@ -86,6 +86,7 @@ export default function VariableHeightExample() {
               ))}
             </div>
           </div>
+
           <Metrics state={viewportSettled ? state : null} />
         </>
       }
