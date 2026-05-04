@@ -149,6 +149,46 @@ function AppendingTailReserveHarness() {
   )
 }
 
+function RollingTailReserveHarness() {
+  const [items, setItems] = useState(baseItems)
+  const counterRef = useRef(0)
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          setItems((current) => {
+            counterRef.current += 1
+            const next: TestItem[] = [
+              ...current,
+              {
+                body: `Rolled message ${counterRef.current}`,
+                id: `rolled-${counterRef.current}`,
+              },
+            ]
+
+            return next.slice(next.length - baseItems.length)
+          })
+        }
+      >
+        Roll
+      </button>
+      <ThreadPort.Viewport
+        ariaLabel="Rolling tail reserve transcript"
+        estimateSize={estimateSize}
+        getItemKey={getItemKey}
+        initialAnchor="head"
+        items={items}
+        renderItem={renderItem}
+        style={{ height: 260 }}
+        tailReserve={{ className: 'rolling-tail-reserve-test', minHeight: 180 }}
+        virtualizerOptions={virtualizerOptions()}
+      />
+    </>
+  )
+}
+
 describe('Viewport React rendering', () => {
   it('renders a labeled scroll region with virtualized item content', async () => {
     render(<ViewportHarness />)
@@ -225,5 +265,33 @@ describe('Viewport React rendering', () => {
     expect(reserve).toBeInTheDocument()
     expect(reserve).toHaveClass('tail-reserve-test')
     expect(reserve).toHaveStyle({ minHeight: '180px' })
+  })
+
+  it('activates the tail reserve when the buffer rolls (head trim + tail append)', async () => {
+    const user = userEvent.setup()
+
+    render(<RollingTailReserveHarness />)
+
+    expect(document.querySelector('[data-tail-reserve="active"]')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Roll' }))
+
+    expect(await screen.findByTestId('message-rolled-1')).toBeInTheDocument()
+    expect(screen.queryByTestId('message-alpha')).not.toBeInTheDocument()
+
+    const firstReserve = document.querySelector('[data-tail-reserve="active"]')
+
+    expect(firstReserve).toBeInTheDocument()
+    expect(firstReserve).toHaveClass('rolling-tail-reserve-test')
+
+    await user.click(screen.getByRole('button', { name: 'Roll' }))
+
+    expect(await screen.findByTestId('message-rolled-2')).toBeInTheDocument()
+    expect(screen.queryByTestId('message-bravo')).not.toBeInTheDocument()
+
+    const secondReserve = document.querySelector('[data-tail-reserve="active"]')
+
+    expect(secondReserve).toBeInTheDocument()
+    expect(secondReserve).toHaveClass('rolling-tail-reserve-test')
   })
 })

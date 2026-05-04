@@ -17,12 +17,12 @@ import {
   DEFAULT_AT_TAIL_THRESHOLD,
   DEFAULT_ESTIMATE,
 } from './internal/constants'
+import { createFrameThrottle } from './internal/scheduleFrame'
 import {
   type ActiveScrollAnimation,
   animateScrollTop,
   resolveScrollAnimation,
 } from './internal/scrollAnimation'
-import { createFrameThrottle } from './internal/scheduleFrame'
 import { isTailReserveEnabled } from './internal/TailReserve'
 import {
   resolveMaxScrollTop,
@@ -481,18 +481,19 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       items.length > 0 && items[items.length - 1] !== undefined
         ? getItemKey(items[items.length - 1], items.length - 1)
         : null
-    const previousCount = previousCountRef.current
     const previousFirstKey = previousFirstKeyRef.current
     const previousLastKey = previousLastKeyRef.current
     const previousFirstMoved =
       previousFirstKey !== null &&
       keyToIndex.has(previousFirstKey) &&
       (keyToIndex.get(previousFirstKey) ?? 0) > 0
+    const previousLastIndex =
+      previousLastKey !== null ? keyToIndex.get(previousLastKey) : undefined
     const appendedToTail =
-      previousCount !== null &&
-      items.length > previousCount &&
-      previousFirstKey === firstKey &&
-      previousLastKey !== lastKey
+      previousLastKey !== null &&
+      previousLastKey !== lastKey &&
+      previousLastIndex !== undefined &&
+      previousLastIndex < items.length - 1
 
     if (preserveScrollOnPrepend && previousFirstMoved) {
       const anchor = anchorRef.current
@@ -641,31 +642,32 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     virtualItems.length,
   ])
 
-  const renderFirstKey =
-    items.length > 0 && items[0] !== undefined ? getItemKey(items[0], 0) : null
   const renderLastKey =
     items.length > 0 && items[items.length - 1] !== undefined
       ? getItemKey(items[items.length - 1], items.length - 1)
       : null
+  const renderPreviousLastIndex =
+    previousLastKeyRef.current !== null
+      ? keyToIndex.get(previousLastKeyRef.current)
+      : undefined
   const renderAppendedToTail =
-    previousCountRef.current !== null &&
-    items.length > previousCountRef.current &&
-    previousFirstKeyRef.current === renderFirstKey &&
-    previousLastKeyRef.current !== renderLastKey
+    previousLastKeyRef.current !== null &&
+    previousLastKeyRef.current !== renderLastKey &&
+    renderPreviousLastIndex !== undefined &&
+    renderPreviousLastIndex < items.length - 1
   const activeReservedTailKey =
     tailReserveEnabled && renderAppendedToTail && renderLastKey !== null
       ? renderLastKey
       : reservedTailKey
   const appendedHeadKey = (() => {
-    const index = previousCountRef.current
-
-    if (!renderAppendedToTail || index === null) {
+    if (!renderAppendedToTail || renderPreviousLastIndex === undefined) {
       return null
     }
 
-    const item = items[index]
+    const headIndex = renderPreviousLastIndex + 1
+    const item = items[headIndex]
 
-    return item === undefined ? null : getItemKey(item, index)
+    return item === undefined ? null : getItemKey(item, headIndex)
   })()
   const activeTailHeadKey = appendedHeadKey ?? tailReserveHeadKeyRef.current
   const readVirtualItemStart = (itemKey: ItemKey | null) => {
