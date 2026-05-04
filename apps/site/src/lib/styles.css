@@ -550,8 +550,8 @@ h1 {
   min-width: 0;
   align-self: start;
   position: sticky;
-  top: 5.5rem;
-  max-height: calc(100dvh - 6.6rem);
+  top: 0;
+  max-height: 100%;
   overflow: auto;
   display: grid;
   gap: var(--space-3);
