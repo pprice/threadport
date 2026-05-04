@@ -117,30 +117,62 @@ Frame helpers:
 - `Overlay`: frame-relative overlay; avoids the scrollbar lane by default and can forward wheel events to the viewport.
 - `useRootState`: read frame geometry in custom UI.
 
-## Layout Rules
+## Layout
 
-- Give the viewport a bounded height.
-- Keep composer and floating controls outside `Viewport`.
+`<ThreadPort.Root>` ships with `display: flex; flex-direction: column; min-height: 0` as inline-style defaults. `<ThreadPort.Viewport>` ships with `flex: 1 1 auto; min-height: 0; overflow-y: auto`. Together: the viewport fills any parent that gives it a definite height, and stays out of the way of any parent that doesn't.
+
+**The contract: the Root's parent must have a definite height for internal scrolling.** The library can't manufacture a height; it can only respect the one you provide.
+
+Four common patterns:
+
+```tsx
+// 1. 100dvh shell — the canonical "chat fills the screen" layout
+<div style={{ height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+  <header>...</header>
+  <ThreadPort.Root style={{ flex: 1 }}>...</ThreadPort.Root>
+</div>
+
+// 2. Fixed pixel container
+<ThreadPort.Root style={{ height: 600 }}>...</ThreadPort.Root>
+
+// 3. Sized grid track
+<div style={{ display: 'grid', gridTemplateRows: 'minmax(0, 1fr)', height: '100dvh' }}>
+  <ThreadPort.Root>...</ThreadPort.Root>
+</div>
+
+// 4. Variable, react-state driven
+<div style={{ height: hostHeight }}>
+  <ThreadPort.Root>...</ThreadPort.Root>
+</div>
+```
+
+If the Root's parent is content-sized — no height, no `flex: 1`, not a stretching grid item with a constrained row — the viewport will grow with each new message instead of scrolling. That's the symptom of an unconstrained parent.
+
+When stacking inside a flex column, `min-height: 0` matters at every level: parent flex items default to `min-height: auto` (content-based) and won't shrink to allow overflow. Threadport sets it on its own elements; you may need it on yours too.
+
+The `headInset` and `tailInset` props reserve space *within* the viewport for chrome (sticky headers, composers via `Overlay`). They are not a substitute for a sized parent.
+
+Other rules of thumb:
+
+- Keep composer and floating controls outside `Viewport`. Use `Overlay` with `placement="head"` / `placement="tail"` for frame-relative chrome.
 - Pass overlap as `headInset` / `tailInset`; do not fake it with message padding.
 - Use `tailReserve` when newly appended responses should start with a screen of empty space beneath them.
 
 ## Development
 
+This package lives in a pnpm monorepo. From the repo root:
+
 ```sh
-npm install
-npm run dev
-npm test
-npm run test:react
-npm run test:integration
-npm run build
-npm run pack:dry
+pnpm install
+pnpm dev:site                  # marketing home + examples site
+pnpm dev:harness               # Playwright fixtures host
+pnpm test:react                # vitest unit tests
+pnpm test:integration          # Playwright integration tests
+pnpm build:lib                 # tsup build for the published package
 ```
 
-The examples site is at `/` in dev. Test fixtures live at `/fixtures/`, and
-the API test harness is at `/fixtures/?fixture=api`.
-
-React component tests live in `tests/react`. Browser-backed integration tests
-live in `tests/integration`.
+React component tests live in `packages/react-threadport/tests/react`.
+Browser-backed integration tests live in the repo's `tests/integration`.
 
 ## License
 

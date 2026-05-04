@@ -18,6 +18,17 @@ export type RootRegistration = {
   tailInset: number
 }
 
+/**
+ * Props for `<ThreadPort.Root>`, the frame element that publishes inset and
+ * scrollbar geometry to overlays.
+ *
+ * Root ships with `display: flex; flex-direction: column; min-height: 0`
+ * inline-style defaults so the viewport fills any parent that has a definite
+ * height. The Root's parent must provide that height (100dvh, `flex: 1`,
+ * fixed pixels, or a sized grid track) for internal scrolling to engage; an
+ * unconstrained parent will let the viewport grow with content. See the
+ * Layout section of the README for patterns.
+ */
 export type RootProps = {
   children?: ReactNode
   className?: string
@@ -124,6 +135,15 @@ export type RenderItemArgs<TItem> = {
   virtualItem: VirtualItem
 }
 
+/**
+ * Props for `<ThreadPort.Viewport>`, the virtualized scroll element.
+ *
+ * The Viewport ships with `flex: 1 1 auto; min-height: 0; overflow-y: auto`
+ * inline-style defaults. It fills whatever height its parent gives it and
+ * scrolls internally when content exceeds that height. See the Layout
+ * section of the README for parent sizing patterns and the `headInset` /
+ * `tailInset` / `tailReserve` props for chrome and reserved space.
+ */
 export type ViewportProps<TItem> = {
   items: readonly TItem[]
   getItemKey: (item: TItem, index: number) => ItemKey
