@@ -4,48 +4,113 @@ import {
   type DemoMessage,
   EXAMPLE_ITEM_GAP,
   estimateMessageSize,
-  examples,
   getMessageKey,
   InsetOverlays,
   MessageView,
   mountPage,
+  REPO_URL,
   SiteHeader,
   ThreadPort,
   useReducedMotion,
 } from './shared'
 
-const previewPrompt = 'Reserve space for the next answer.'
-const previewChunks = [
-  ' The prompt anchors near the top.',
-  ' Threadport gives the new assistant row breathing room.',
-  ' The host still owns this composer, copy, and visual treatment.',
+type PreviewExchange = {
+  answer: string
+  prompt: string
+}
+
+const previewExchanges: readonly PreviewExchange[] = [
+  {
+    prompt: 'Reserve space for the next answer.',
+    answer:
+      'Starting with active tail reserve. The prompt anchors near the top. Threadport gives the new assistant row breathing room. The host still owns this composer, copy, and visual treatment.',
+  },
+  {
+    prompt: 'How does it handle long answers?',
+    answer:
+      "Each row is estimated up front, then measured after paint, so the scroll range stays aligned with whatever the assistant actually produces. As new content streams in, the row grows; the virtualizer reconciles measurement deltas without nudging the reader.\n\nIf a wheel, touch, or pointer event lands while a programmatic scroll is in flight, the animation cancels itself immediately. After the scroll settles, captureAnchor records the visible anchor and its viewport-relative top. That capture is rate-limited to once per frame, so fast wheel events do not force a synchronous layout on every native scroll tick.\n\nAny prepend that arrives while the anchor is in view triggers an offset restoration. The new scrollTop becomes the anchor's virtualItem start plus the prior delta, then the actual DOM rect is read on the next frame and corrected for measurement drift. Two passes is intentional: the first pass uses the virtualizer math to land approximately, the second pass uses real layout to fine-tune. The reader sees no flicker, no jump, no measurement reset.\n\nThe tail reserve sits at the bottom of the transcript whenever an append is in flight. Its minHeight is derived from headInset, tailInset, viewport size, and the consumed space above the appended item, so the reserve only takes up what is left over after the new prompt is anchored at the top. As the assistant body streams in, the reserve shrinks; once the content fills it, maxScrollTop returns to the physical scroll bottom and the user can scroll past freely.\n\nNothing here is magic. The viewport owns measurement, virtualization, and anchor preservation. The host owns when to scroll, when to reserve, when to expose controls. That separation is what keeps Threadport useful: integrators can mimic GPT-style behavior without inheriting product opinions.",
+  },
+  {
+    prompt: 'Can older history load above the reader?',
+    answer:
+      'Prepends preserve the visible reading position. The integrator drives the load; the viewport keeps the anchor. Estimates and measurements stay coherent across the prepend. The reader does not lose their place.',
+  },
+  {
+    prompt: 'What about jumping to the latest answer?',
+    answer:
+      'Tail policy is explicit, never automatic. onStateChange reports distance from tail to the host. The host decides when to expose a jump control. Submitted prompts still scroll to the top by default.',
+  },
 ]
 
-function createPreviewSeed() {
-  return [
-    createMessage(
-      'system',
-      'This preview uses Threadport for scroll behavior. The message UI is ordinary React.',
-      'note',
-      'Boundary',
-    ),
-    createMessage(
-      'assistant',
-      'Variable-height rows are measured after paint, so the viewport tracks real content instead of guesses.',
-    ),
-    createMessage('user', 'Can a new response start with room below it?'),
-  ]
+const THINKING_DELAY = 320
+const WORD_INTERVAL = 38
+const POST_STREAM_PAUSE = 1400
+const MAX_PREVIEW_MESSAGES = 24
+
+type Token = readonly [kind: string, text: string]
+
+const usageTokens: readonly Token[] = [
+  ['kw', 'import'],
+  ['plain', ' * '],
+  ['kw', 'as'],
+  ['plain', ' ThreadPort '],
+  ['kw', 'from'],
+  ['plain', ' '],
+  ['str', "'@phipri/react-threadport'"],
+  ['plain', '\n\n'],
+  ['punct', '<'],
+  ['tag', 'ThreadPort.Viewport'],
+  ['plain', '\n  '],
+  ['attr', 'items'],
+  ['punct', '={'],
+  ['plain', 'messages'],
+  ['punct', '}'],
+  ['plain', '\n  '],
+  ['attr', 'getItemKey'],
+  ['punct', '={('],
+  ['plain', 'm'],
+  ['punct', ') => '],
+  ['plain', 'm'],
+  ['punct', '.'],
+  ['plain', 'id'],
+  ['punct', '}'],
+  ['plain', '\n  '],
+  ['attr', 'estimateSize'],
+  ['punct', '={('],
+  ['plain', 'm'],
+  ['punct', ') => '],
+  ['num', '96'],
+  ['punct', '}'],
+  ['plain', '\n  '],
+  ['attr', 'renderItem'],
+  ['punct', '={({ '],
+  ['plain', 'item'],
+  ['punct', ' }) => (\n    <'],
+  ['tag', 'YourMessage'],
+  ['plain', ' '],
+  ['attr', 'message'],
+  ['punct', '={'],
+  ['plain', 'item'],
+  ['punct', '} />'],
+  ['plain', '\n  '],
+  ['punct', ')}\n/>'],
+]
+
+function tokenizeWords(text: string): readonly string[] {
+  return text.match(/\S+\s*/g) ?? []
+}
+
+function estimateBodyHeight(body: string): number {
+  return 96 + Math.ceil(body.length / 74) * 24
 }
 
 function Home() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
-  const [previewMessages, setPreviewMessages] =
-    useState<DemoMessage[]>(createPreviewSeed)
-  const [draft, setDraft] = useState('')
-  const [phase, setPhase] = useState<'typing' | 'reserved' | 'streaming'>(
-    'typing',
+  const [previewMessages, setPreviewMessages] = useState<DemoMessage[]>(
+    () => [],
   )
+  const [draft, setDraft] = useState('')
 
   useEffect(() => {
     const timers: number[] = []
@@ -54,16 +119,22 @@ function Home() {
 
       timers.push(id)
     }
+    let cycleIndex = 0
 
     function runCycle() {
-      setPreviewMessages(createPreviewSeed())
+      const exchange = previewExchanges[cycleIndex % previewExchanges.length]
+      cycleIndex += 1
       setDraft('')
-      setPhase('typing')
+
+      if (!exchange) {
+        return
+      }
 
       const characters = reducedMotion
-        ? [previewPrompt]
-        : previewPrompt.split('')
+        ? [exchange.prompt]
+        : exchange.prompt.split('')
       const typingDelay = reducedMotion ? 0 : 34
+      const words = tokenizeWords(exchange.answer)
 
       characters.forEach((text, index) => {
         schedule(
@@ -74,57 +145,76 @@ function Home() {
         )
       })
 
-      schedule(
-        () => {
-          const userMessage = createMessage('user', previewPrompt)
-          const assistantMessage = createMessage(
-            'assistant',
-            'Starting with active tail reserve.',
-            'note',
-            'Reserved response',
-          )
+      const messageDelay = 380 + characters.length * typingDelay + 540
 
-          setDraft('')
-          setPhase('reserved')
-          setPreviewMessages((current) => [
-            ...current,
-            userMessage,
-            assistantMessage,
-          ])
+      schedule(() => {
+        const userMessage = createMessage('user', exchange.prompt)
+        const assistantMessage = createMessage('assistant', '')
 
-          requestAnimationFrame(() => {
-            viewportRef.current?.scrollToItem(userMessage.id, {
-              align: 'head',
-              animation: reducedMotion
-                ? { duration: 0 }
-                : ThreadPort.Animation.easeOutQuart(420),
-            })
+        setDraft('')
+        setPreviewMessages((current) => {
+          const next = [...current, userMessage, assistantMessage]
+
+          if (next.length <= MAX_PREVIEW_MESSAGES) {
+            return next
+          }
+
+          return next.slice(next.length - MAX_PREVIEW_MESSAGES)
+        })
+
+        requestAnimationFrame(() => {
+          viewportRef.current?.scrollToItem(userMessage.id, {
+            align: 'head',
+            animation: reducedMotion
+              ? { duration: 0 }
+              : ThreadPort.Animation.easeOutQuart(420),
           })
+        })
 
-          previewChunks.forEach((chunk, index) => {
-            schedule(
-              () => {
-                setPhase('streaming')
-                setPreviewMessages((current) =>
-                  current.map((message) =>
-                    message.id === assistantMessage.id
-                      ? {
-                          ...message,
-                          body: `${message.body}${chunk}`,
-                          estimate: message.estimate + 40,
-                        }
-                      : message,
-                  ),
-                )
-              },
-              760 + index * 520,
+        if (reducedMotion) {
+          schedule(() => {
+            setPreviewMessages((current) =>
+              current.map((message) =>
+                message.id === assistantMessage.id
+                  ? {
+                      ...message,
+                      body: exchange.answer,
+                      estimate: estimateBodyHeight(exchange.answer),
+                    }
+                  : message,
+              ),
             )
-          })
-        },
-        380 + characters.length * 34 + 540,
-      )
+          }, 0)
+          return
+        }
 
-      schedule(runCycle, reducedMotion ? 5200 : 7600)
+        let assembled = ''
+        words.forEach((word, index) => {
+          schedule(
+            () => {
+              assembled += word
+              const nextBody = assembled
+              setPreviewMessages((current) =>
+                current.map((message) =>
+                  message.id === assistantMessage.id
+                    ? {
+                        ...message,
+                        body: nextBody,
+                        estimate: estimateBodyHeight(nextBody),
+                      }
+                    : message,
+                ),
+              )
+            },
+            THINKING_DELAY + index * WORD_INTERVAL,
+          )
+        })
+      }, messageDelay)
+
+      const streamingTime = reducedMotion
+        ? 0
+        : THINKING_DELAY + words.length * WORD_INTERVAL
+      schedule(runCycle, messageDelay + streamingTime + POST_STREAM_PAUSE)
     }
 
     runCycle()
@@ -142,27 +232,46 @@ function Home() {
       <main className="homeMain">
         <section className="homeHero">
           <div className="heroCopy">
-            <p className="eyebrow">Threadport examples</p>
+            <p className="eyebrow">React · headless · v1.0</p>
             <h1>The headless chat viewport for React</h1>
             <p className="lede">
-              Dynamic measurement, inset-aware overlays, prepend anchoring, and
-              explicit jump policy for GPT-style transcripts.
+              All the scroll mechanics that make ChatGPT and Claude feel right,
+              headless, in your React app. You ship the messages, composer, and
+              styling.
             </p>
             <div className="homeActions">
               <a className="button primary" href="/examples/standard/">
-                Start with standard
+                Open the live example
               </a>
-              <a className="button" href="/examples/insets/">
-                Inspect insets
+              <a
+                className="button"
+                href={REPO_URL}
+                rel="noreferrer"
+                target="_blank"
+              >
+                View on GitHub
               </a>
             </div>
+            <pre className="heroCode">
+              <code>
+                {usageTokens.map(([kind, text], index) =>
+                  kind === 'plain' ? (
+                    text
+                  ) : (
+                    <span
+                      // biome-ignore lint/suspicious/noArrayIndexKey: static token list
+                      key={index}
+                      className={`tok-${kind}`}
+                    >
+                      {text}
+                    </span>
+                  ),
+                )}
+              </code>
+            </pre>
           </div>
 
           <div className="heroPreview">
-            <div className="previewHeader">
-              <span>Fake interaction</span>
-              <span>{phase === 'typing' ? 'typing' : phase}</span>
-            </div>
             <ThreadPort.Root className="previewFrame">
               <ThreadPort.Viewport
                 ref={viewportRef}
@@ -190,85 +299,10 @@ function Home() {
                 <div className="previewComposer" aria-hidden="true">
                   <span>{draft || 'Message Threadport'}</span>
                   <span className="typingCaret" />
-                  <button type="button" tabIndex={-1}>
-                    ↑
-                  </button>
+                  <button type="button">↑</button>
                 </div>
               </ThreadPort.Overlay>
-              <div
-                aria-hidden="true"
-                className={`previewReserveBadge ${
-                  phase === 'typing' ? '' : 'isVisible'
-                }`}
-              >
-                reserved tail space
-              </div>
             </ThreadPort.Root>
-          </div>
-        </section>
-
-        <section className="ownershipBand" aria-label="Responsibility split">
-          <div>
-            <p className="eyebrow">Threadport owns</p>
-            <p>Measurement, virtualization, anchors, overlays, scroll state.</p>
-          </div>
-          <div>
-            <p className="eyebrow">Your app owns</p>
-            <p>Messages, composer, empty states, controls, styling, policy.</p>
-          </div>
-        </section>
-
-        <section className="exampleSection">
-          <div className="sectionHeader">
-            <p className="eyebrow">Examples</p>
-            <h2>Focused pages, readable integrations</h2>
-            <p className="lede">
-              Six focused pages. Each keeps the chat surface familiar while the
-              integration point stays visible in the code and surrounding notes.
-            </p>
-          </div>
-
-          <ol className="exampleDirectory" aria-label="Example directory">
-            {examples.map((example, index) => (
-              <li key={example.id}>
-                <a className="exampleLink" href={example.href}>
-                  <span className="exampleNumber">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <span>
-                    <strong>{example.label}</strong>
-                    <span>{example.description}</span>
-                  </span>
-                  <span className="exampleMeta">
-                    {example.scope} / {example.ownedBy}
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="principles" aria-label="Threadport principles">
-          <div>
-            <h3>Headless by default</h3>
-            <p>
-              The viewport owns scroll behavior. The integrator owns product UI,
-              message rendering, and empty states.
-            </p>
-          </div>
-          <div>
-            <h3>Variable height first</h3>
-            <p>
-              Rows are estimated and measured so chat content can include text,
-              code, previews, controls, and arbitrary response blocks.
-            </p>
-          </div>
-          <div>
-            <h3>Stable under change</h3>
-            <p>
-              Prepends preserve the visible anchor, appends can reserve active
-              tail space, and imperative commands stay explicit.
-            </p>
           </div>
         </section>
       </main>
