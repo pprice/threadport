@@ -7,7 +7,6 @@ import {
   EXAMPLE_ITEM_GAP,
   estimateMessageSize,
   getMessageKey,
-  InsetOverlays,
   MessageView,
   Metrics,
   scrollPromptToHead,
@@ -120,7 +119,6 @@ export default function VariableHeightExample() {
             tailReserve={{ className: 'tailReserve gptTailReserve' }}
             virtualizerOptions={{ overscan: 8 }}
           />
-          <InsetOverlays />
           <ThreadPort.Overlay className="composerDock" placement="tail">
             <Composer onSubmit={commitMessage} />
           </ThreadPort.Overlay>

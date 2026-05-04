@@ -6,7 +6,6 @@ import {
   EXAMPLE_ITEM_GAP,
   estimateMessageSize,
   getMessageKey,
-  InsetOverlays,
   MessageView,
   ThreadPort,
   useReducedMotion,
@@ -289,7 +288,6 @@ export function Home() {
                 tailReserve={{ className: 'tailReserve previewTailReserve' }}
                 virtualizerOptions={{ overscan: 4 }}
               />
-              <InsetOverlays />
               <ThreadPort.Overlay
                 className="previewComposerDock"
                 placement="tail"

@@ -8,7 +8,6 @@ import {
   EXAMPLE_ITEM_GAP,
   estimateMessageSize,
   getMessageKey,
-  InsetOverlays,
   MessageView,
   Metrics,
   SettledViewportRoot,
@@ -113,7 +112,6 @@ export default function JumpToBottomExample() {
           tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 8 }}
         />
-        <InsetOverlays />
         {showJump && (
           <ThreadPort.Overlay className="jumpOverlay" placement="fill">
             <button

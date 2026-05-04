@@ -1119,36 +1119,32 @@ h1 {
   opacity: 0.72;
 }
 
-.insetHeadDock {
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.7rem clamp(1rem, 3vw, 2rem);
-  overflow: hidden;
-  border-block-end: 1px solid color-mix(in oklch, var(--ink) 10%, transparent);
-  background: linear-gradient(
-    180deg,
-    oklch(0.996 0.004 102 / 0.68),
-    oklch(0.996 0.004 102 / 0.16)
-  );
-  pointer-events: none;
-}
-
+.insetHeadDock,
 .insetTailDock {
   z-index: 1;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
-  padding: 0.62rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  padding: 0.7rem clamp(1rem, 3vw, 2rem);
   overflow: hidden;
-  border-block-start: 1px solid color-mix(in oklch, var(--ink) 10%, transparent);
-  background: linear-gradient(
-    180deg,
-    oklch(0.996 0.004 102 / 0.12),
-    oklch(0.996 0.004 102 / 0.72)
+  background-color: oklch(0.94 0.06 28 / 0.5);
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    oklch(0.55 0.22 28 / 0.55) 1px,
+    transparent 0
   );
+  background-size: 8px 8px;
   pointer-events: none;
+}
+
+.insetHeadDock {
+  align-items: center;
+  border-block-end: 1px dashed oklch(0.55 0.22 28 / 0.7);
+}
+
+.insetTailDock {
+  align-items: flex-start;
+  padding-block-end: calc(0.7rem + env(safe-area-inset-bottom));
+  border-block-start: 1px dashed oklch(0.55 0.22 28 / 0.7);
 }
 
 .insetBand {
@@ -1157,23 +1153,29 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  opacity: 0.82;
+  padding: 0.3rem 0.55rem;
+  background: var(--paper);
+  border: 1px dashed oklch(0.55 0.22 28 / 0.7);
+  border-radius: 6px;
 }
 
 .insetName {
-  color: var(--quiet);
-  font-size: 0.78rem;
-  font-weight: 500;
+  color: oklch(0.5 0.22 28);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .insetValue {
-  padding: 0.22rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 0.74rem;
-  font-weight: 500;
+  padding: 0.16rem 0.4rem;
+  border: 0;
+  border-radius: 4px;
+  background: oklch(0.55 0.22 28);
+  color: var(--paper);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .jumpOverlay {

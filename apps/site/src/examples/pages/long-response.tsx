@@ -7,7 +7,6 @@ import {
   EXAMPLE_ITEM_GAP,
   estimateMessageSize,
   getMessageKey,
-  InsetOverlays,
   MessageView,
   Metrics,
   SettledViewportRoot,
@@ -121,7 +120,6 @@ export default function LongResponseExample() {
           tailReserve={{ className: 'tailReserve longTailReserve' }}
           virtualizerOptions={{ overscan: 8 }}
         />
-        <InsetOverlays />
         <ThreadPort.Overlay className="composerDock" placement="tail">
           <Composer onSubmit={commitMessage} />
         </ThreadPort.Overlay>
