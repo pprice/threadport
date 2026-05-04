@@ -19,7 +19,7 @@ import {
 } from './internal/constants'
 import { computeItemKeyTransition } from './internal/itemKeyTransitions'
 import { useRootRegistration } from './internal/rootContext'
-import { createFrameThrottle } from './internal/scheduleFrame'
+import { nextFrame } from './internal/scheduleFrame'
 import {
   type ActiveScrollAnimation,
   animateScrollTop,
@@ -31,11 +31,12 @@ import {
   resolveTailReserveMinHeight,
   resolveUnconsumedTailReserve,
 } from './internal/tailReserveCalculation'
+import { useAnchorManager } from './internal/useAnchorManager'
 import { useLatest } from './internal/useLatest'
+import { useScrollbarInlineSize } from './internal/useScrollbarInlineSize'
 import { useTailReserveContentMeasurement } from './internal/useTailReserveContentMeasurement'
 import { useViewportStateEmitter } from './internal/useViewportStateEmitter'
 import { VirtualRows } from './internal/VirtualRows'
-import { readScrollbarInlineSize } from './Root'
 import type {
   ItemKey,
   ScrollAlign,
@@ -46,14 +47,6 @@ import type {
   ViewportProps,
   ViewportState,
 } from './types'
-
-type AnchorSnapshot = {
-  elementTop: number | null
-  itemKey: ItemKey
-  scrollDelta: number
-}
-
-function noop() {}
 
 function toVirtualAlign(align: ScrollAlign) {
   if (align === 'head') {
@@ -99,7 +92,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const animationRef = useRef<ActiveScrollAnimation | null>(null)
   const programmaticScrollRef = useRef(false)
   const scrollAnimationIdRef = useRef(0)
-  const anchorRef = useRef<AnchorSnapshot | null>(null)
   const previousCountRef = useRef<number | null>(null)
   const previousFirstKeyRef = useRef<ItemKey | null>(null)
   const previousLastKeyRef = useRef<ItemKey | null>(null)
@@ -107,7 +99,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const lastScrollTopRef = useRef(0)
   const scrollDirectionRef = useRef<ScrollDirection>(null)
   const measuredTailReserveKeyRef = useRef<ItemKey | null>(null)
-  const scrollbarInlineSizeRef = useRef(0)
   const tailReserveContentSizeRef = useRef(0)
   const tailReserveConsumedBeforeTailRef = useRef(0)
   const tailReserveHeadKeyRef = useRef<ItemKey | null>(null)
@@ -177,17 +168,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     })
   }
 
-  function updateScrollbarInlineSize() {
-    const nextSize = readScrollbarInlineSize(scrollRef.current)
-
-    if (Math.abs(nextSize - scrollbarInlineSizeRef.current) < 0.5) {
-      return false
-    }
-
-    scrollbarInlineSizeRef.current = nextSize
-    return true
-  }
-
   function readState(): ViewportState {
     const element = scrollRef.current
     const scrollOffset = element?.scrollTop ?? 0
@@ -220,79 +200,6 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     emitState()
     scheduleSettledStateEmit()
   }, [emitState, scheduleSettledStateEmit])
-
-  const captureAnchorRef = useRef<() => void>(noop)
-  const captureAnchorThrottle = useMemo(
-    () => createFrameThrottle(() => captureAnchorRef.current()),
-    [],
-  )
-
-  useEffect(() => {
-    return () => {
-      captureAnchorThrottle.cancel()
-    }
-  }, [captureAnchorThrottle])
-
-  function captureAnchor() {
-    const element = scrollRef.current
-
-    if (!element || items.length === 0) {
-      return
-    }
-
-    const virtualItems = virtualizer.getVirtualItems()
-    const anchorItem =
-      virtualItems.find(
-        (virtualItem) => virtualItem.end >= element.scrollTop,
-      ) ??
-      virtualizer.getVirtualItemForOffset(element.scrollTop) ??
-      virtualItems[0]
-
-    if (!anchorItem) {
-      return
-    }
-
-    const item = items[anchorItem.index]
-
-    if (item === undefined) {
-      return
-    }
-
-    anchorRef.current = {
-      elementTop:
-        element
-          .querySelector<HTMLElement>(`[data-index="${anchorItem.index}"]`)
-          ?.getBoundingClientRect().top ?? null,
-      itemKey: getItemKey(item, anchorItem.index),
-      scrollDelta: element.scrollTop - anchorItem.start,
-    }
-  }
-  captureAnchorRef.current = captureAnchor
-
-  function restoreAnchorElementTop(index: number, anchor: AnchorSnapshot) {
-    const element = scrollRef.current
-
-    if (!element || anchor.elementTop === null) {
-      return false
-    }
-
-    const anchorElement = element.querySelector<HTMLElement>(
-      `[data-index="${index}"]`,
-    )
-    const nextTop = anchorElement?.getBoundingClientRect().top
-
-    if (nextTop === undefined) {
-      return false
-    }
-
-    const delta = nextTop - anchor.elementTop
-
-    if (Math.abs(delta) >= 0.5) {
-      element.scrollTop += delta
-    }
-
-    return true
-  }
 
   function scrollToTarget(
     getTargetTop: () => number,
@@ -402,40 +309,23 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       virtualizerOptions?.useAnimationFrameWithResizeObserver ?? true,
   })
 
+  const { captureAnchor, captureAnchorThrottle, restoreIfPrepended } =
+    useAnchorManager({
+      getItemKey,
+      items,
+      keyToIndex,
+      scrollRef,
+      virtualizer,
+    })
+
   useLayoutEffect(() => {
     reservedTailKeyRef.current = reservedTailKey
   }, [reservedTailKey])
 
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    function measureScrollbarInlineSize() {
-      if (updateScrollbarInlineSize()) {
-        scheduleStateEmit()
-      }
-    }
-
-    measureScrollbarInlineSize()
-
-    const element = scrollRef.current
-    const observer =
-      element && typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(measureScrollbarInlineSize)
-        : null
-
-    if (element) {
-      observer?.observe(element)
-    }
-
-    window.addEventListener('resize', measureScrollbarInlineSize)
-
-    return () => {
-      observer?.disconnect()
-      window.removeEventListener('resize', measureScrollbarInlineSize)
-    }
-  }, [])
+  const scrollbarInlineSizeRef = useScrollbarInlineSize({
+    onChange: scheduleStateEmit,
+    scrollRef,
+  })
 
   useLayoutEffect(() => {
     if (!registerViewportFrame) {
@@ -488,33 +378,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     )
 
     if (preserveScrollOnPrepend && prependDetected) {
-      const anchor = anchorRef.current
-      const element = scrollRef.current
-
-      if (anchor && element) {
-        const anchorIndex = keyToIndex.get(anchor.itemKey)
-
-        if (anchorIndex !== undefined) {
-          const restoredFromElement = restoreAnchorElementTop(
-            anchorIndex,
-            anchor,
-          )
-          const offset =
-            virtualizer
-              .getVirtualItems()
-              .find((virtualItem) => virtualItem.index === anchorIndex)
-              ?.start ??
-            virtualizer.getOffsetForIndex(anchorIndex, 'start')?.[0]
-
-          if (!restoredFromElement && offset !== undefined) {
-            element.scrollTop = offset + anchor.scrollDelta
-
-            requestAnimationFrame(() => {
-              restoreAnchorElementTop(anchorIndex, anchor)
-            })
-          }
-        }
-      }
+      restoreIfPrepended()
     }
 
     if (!tailReserveEnabled || lastKey === null) {
@@ -549,7 +413,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     didInitialScrollRef.current = true
 
     if (initialAnchor === 'tail') {
-      requestAnimationFrame(() => {
+      nextFrame(() => {
         scrollToTarget(getMaxScrollTop, { duration: 0 })
       })
     }
@@ -575,7 +439,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
 
   function scrollToTail(options?: ScrollAnimation) {
     scrollToTarget(getMaxScrollTop, options, () => {
-      requestAnimationFrame(() => {
+      nextFrame(() => {
         const element = scrollRef.current
 
         if (!element) {
@@ -630,11 +494,9 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   useLayoutEffect(() => {
     scheduleStateEmit()
 
-    const frame = requestAnimationFrame(() => {
+    return nextFrame(() => {
       emitState()
     })
-
-    return () => cancelAnimationFrame(frame)
   }, [
     atHeadThreshold,
     atTailThreshold,

@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { ViewportState } from '../types'
+import {
+  createFrameDebouncer,
+  createSettledFrameScheduler,
+} from './scheduleFrame'
 import { useLatest } from './useLatest'
 import { shallowEqualState } from './viewportState'
 
@@ -13,8 +17,6 @@ export function useViewportStateEmitter({
   readState,
 }: UseViewportStateEmitterArgs) {
   const lastStateRef = useRef<ViewportState | null>(null)
-  const stateFrameRef = useRef<number | null>(null)
-  const settledStateFrameRef = useRef<number | null>(null)
   const onStateChangeRef = useLatest(onStateChange)
   const readStateRef = useLatest(readState)
 
@@ -35,43 +37,37 @@ export function useViewportStateEmitter({
     handler(next)
   }, [onStateChangeRef, readStateRef])
 
+  const stateScheduler = useMemo(
+    () => createFrameDebouncer(emitState),
+    [emitState],
+  )
+  const settledScheduler = useMemo(
+    () => createSettledFrameScheduler(emitState),
+    [emitState],
+  )
+
   const scheduleStateEmit = useCallback(() => {
-    if (!onStateChangeRef.current || stateFrameRef.current !== null) {
+    if (!onStateChangeRef.current) {
       return
     }
 
-    stateFrameRef.current = requestAnimationFrame(() => {
-      stateFrameRef.current = null
-      emitState()
-    })
-  }, [emitState, onStateChangeRef])
+    stateScheduler.request()
+  }, [onStateChangeRef, stateScheduler])
 
   const scheduleSettledStateEmit = useCallback(() => {
-    if (!onStateChangeRef.current || settledStateFrameRef.current !== null) {
+    if (!onStateChangeRef.current) {
       return
     }
 
-    settledStateFrameRef.current = requestAnimationFrame(() => {
-      settledStateFrameRef.current = requestAnimationFrame(() => {
-        settledStateFrameRef.current = null
-        emitState()
-      })
-    })
-  }, [emitState, onStateChangeRef])
+    settledScheduler.request()
+  }, [onStateChangeRef, settledScheduler])
 
   useEffect(() => {
     return () => {
-      if (stateFrameRef.current !== null) {
-        cancelAnimationFrame(stateFrameRef.current)
-        stateFrameRef.current = null
-      }
-
-      if (settledStateFrameRef.current !== null) {
-        cancelAnimationFrame(settledStateFrameRef.current)
-        settledStateFrameRef.current = null
-      }
+      stateScheduler.cancel()
+      settledScheduler.cancel()
     }
-  }, [])
+  }, [stateScheduler, settledScheduler])
 
   return {
     emitState,
