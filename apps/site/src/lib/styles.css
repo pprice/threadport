@@ -247,6 +247,18 @@ p {
   letter-spacing: -0.018em;
 }
 
+.versionBadge {
+  padding: 0.12rem 0.38rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--quiet);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.25;
+}
+
 .siteHeader nav {
   min-width: 0;
   display: flex;

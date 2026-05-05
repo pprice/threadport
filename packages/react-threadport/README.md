@@ -5,6 +5,13 @@ Virtual. Threadport is intended to mimic the scroll behavior of ChatGPT and
 Claude-style applications while your app owns messages, composer, buttons,
 styling, and layout.
 
+## Demo
+
+- Site: https://threadport.pprice.me/
+- Standard example: https://threadport.pprice.me/examples/standard
+- Insets example: https://threadport.pprice.me/examples/insets
+- Long response example: https://threadport.pprice.me/examples/long-response
+
 ## Install
 
 ```sh

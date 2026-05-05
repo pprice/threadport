@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 
 const fontFiles = [
@@ -15,7 +16,17 @@ const threadportSource = new URL(
   import.meta.url,
 ).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 
+const threadportPackage = JSON.parse(
+  readFileSync(
+    new URL('../../packages/react-threadport/package.json', import.meta.url),
+    'utf8',
+  ),
+) as { version: string }
+
 export default defineConfig({
+  define: {
+    __THREADPORT_VERSION__: JSON.stringify(threadportPackage.version),
+  },
   plugins: [
     {
       name: 'threadport-font-preload',

@@ -10,6 +10,7 @@ import {
   ThreadPort,
   useReducedMotion,
 } from './lib/demo'
+import { THREADPORT_VERSION } from './version'
 
 type PreviewExchange = {
   answer: string
@@ -229,7 +230,9 @@ export function Home() {
       <main className="homeMain">
         <section className="homeHero">
           <div className="heroCopy">
-            <p className="eyebrow">React · headless · virtualized · v1.0</p>
+            <p className="eyebrow">
+              React · headless · virtualized · v{THREADPORT_VERSION}
+            </p>
             <h1>A headless React viewport built for chat</h1>
             <p className="lede">
               All the scroll mechanics that make ChatGPT and Claude feel right,
