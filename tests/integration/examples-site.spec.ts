@@ -100,6 +100,38 @@ for (const route of exampleRoutes) {
   })
 }
 
+test('home preview aligns the submitted prompt near the viewport head', async ({
+  page,
+}) => {
+  await page.goto(SITE_BASE)
+
+  const viewport = page.locator('.exampleViewport')
+  const submittedPrompt = page
+    .locator('[data-message-role="user"]')
+    .filter({ hasText: 'Reserve space for the next answer.' })
+    .last()
+
+  await expect(viewport).toBeVisible()
+  await expect(submittedPrompt).toBeVisible({ timeout: 3500 })
+
+  await expect
+    .poll(
+      async () => {
+        const [promptBox, viewportBox] = await Promise.all([
+          submittedPrompt.boundingBox(),
+          viewport.boundingBox(),
+        ])
+
+        expect(promptBox).not.toBeNull()
+        expect(viewportBox).not.toBeNull()
+
+        return (promptBox?.y ?? 0) - (viewportBox?.y ?? 0)
+      },
+      { timeout: 2400 },
+    )
+    .toBeLessThan(190)
+})
+
 test('/examples/prepend preserves the visible anchor when older rows load', async ({
   page,
 }) => {

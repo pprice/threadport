@@ -7,6 +7,7 @@ import {
   estimateMessageSize,
   getMessageKey,
   MessageView,
+  scrollPromptToHead,
   ThreadPort,
   useReducedMotion,
 } from './lib/demo'
@@ -160,14 +161,7 @@ export function Home() {
           return next.slice(next.length - MAX_PREVIEW_MESSAGES)
         })
 
-        requestAnimationFrame(() => {
-          viewportRef.current?.scrollToItem(userMessage.id, {
-            align: 'head',
-            animation: reducedMotion
-              ? { duration: 0 }
-              : ThreadPort.Animation.easeOutQuart(420),
-          })
-        })
+        scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
 
         if (reducedMotion) {
           schedule(() => {
