@@ -2,6 +2,11 @@
   "name": "@phipri/react-threadport",
   "version": "1.0.0",
   "description": "Headless virtualized chat viewport primitives for React.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pprice/threadport.git",
+    "directory": "packages/react-threadport"
+  },
   "type": "module",
   "license": "MIT",
   "keywords": [

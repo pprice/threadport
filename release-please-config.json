@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": false,
+  "packages": {
+    "packages/react-threadport": {
+      "release-type": "node",
+      "package-name": "@phipri/react-threadport",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

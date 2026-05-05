@@ -1,0 +1,167 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bootstrap_version:
+        description: 'One-time initial version to publish, for example: 1.0.0. Leave empty to update the Release PR.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release and publish
+    if: ${{ github.event_name == 'push' || inputs.bootstrap_version == '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check bootstrap tag
+        id: baseline
+        run: |
+          version="$(node -p "JSON.parse(require('fs').readFileSync('.release-please-manifest.json', 'utf8'))['packages/react-threadport']")"
+          tag="v${version}"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Skipping release-please until ${tag} exists. Run the bootstrap workflow once first."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update release PR
+        if: ${{ steps.baseline.outputs.ready == 'true' }}
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Checkout release commit
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release.outputs['packages/react-threadport--sha'] }}
+
+      - name: Setup Node.js
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Enable pnpm
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        run: corepack enable
+
+      - name: Install dependencies
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck package
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        run: pnpm --filter @phipri/react-threadport typecheck
+
+      - name: Test package
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        run: pnpm --filter @phipri/react-threadport test
+
+      - name: Publish to npm with provenance
+        if: ${{ steps.baseline.outputs.ready == 'true' && steps.release.outputs['packages/react-threadport--release_created'] == 'true' }}
+        working-directory: packages/react-threadport
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  bootstrap:
+    name: Bootstrap initial publish
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.bootstrap_version != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      BOOTSTRAP_VERSION: ${{ inputs.bootstrap_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Validate bootstrap target
+        run: |
+          package_version="$(node -p "require('./packages/react-threadport/package.json').version")"
+          tag="v${BOOTSTRAP_VERSION}"
+
+          if [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Run bootstrap from main, not ${GITHUB_REF_NAME}."
+            exit 1
+          fi
+
+          if [ "${BOOTSTRAP_VERSION#v}" != "$BOOTSTRAP_VERSION" ]; then
+            echo "::error::Use a plain semver version like 1.0.0, not ${BOOTSTRAP_VERSION}."
+            exit 1
+          fi
+
+          if [ "$package_version" != "$BOOTSTRAP_VERSION" ]; then
+            echo "::error::packages/react-threadport/package.json is ${package_version}, but bootstrap_version is ${BOOTSTRAP_VERSION}."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error::Tag ${tag} already exists."
+            exit 1
+          fi
+
+          if npm view "@phipri/react-threadport@${BOOTSTRAP_VERSION}" version >/dev/null 2>&1; then
+            echo "::error::@phipri/react-threadport@${BOOTSTRAP_VERSION} is already published."
+            exit 1
+          fi
+
+      - name: Verify npm auth
+        run: npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck package
+        run: pnpm --filter @phipri/react-threadport typecheck
+
+      - name: Test package
+        run: pnpm --filter @phipri/react-threadport test
+
+      - name: Test package artifact
+        run: pnpm --filter @phipri/react-threadport test:package
+
+      - name: Publish bootstrap version to npm with provenance
+        working-directory: packages/react-threadport
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        run: gh release create "v${BOOTSTRAP_VERSION}" --target "$GITHUB_SHA" --title "v${BOOTSTRAP_VERSION}" --notes "Initial release of @phipri/react-threadport."
+        env:
+          GH_TOKEN: ${{ github.token }}
