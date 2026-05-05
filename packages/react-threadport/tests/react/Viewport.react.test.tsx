@@ -246,6 +246,36 @@ describe('Viewport React rendering', () => {
     )
   })
 
+  it('forwards scrollElementProps onto the scroll element', () => {
+    render(
+      <ThreadPort.Viewport
+        ariaLabel="Gesture transcript"
+        className="viewport-class"
+        estimateSize={estimateSize}
+        getItemKey={getItemKey}
+        initialAnchor="head"
+        items={baseItems}
+        renderItem={renderItem}
+        scrollElementProps={{
+          'data-gesture-root': 'chat',
+          id: 'gesture-scroll-root',
+          title: 'Gesture scroll root',
+        }}
+        style={{ height: 260 }}
+        virtualizerOptions={virtualizerOptions()}
+      />,
+    )
+
+    const viewport = screen.getByRole('region', {
+      name: 'Gesture transcript',
+    })
+
+    expect(viewport).toHaveAttribute('data-gesture-root', 'chat')
+    expect(viewport).toHaveAttribute('id', 'gesture-scroll-root')
+    expect(viewport).toHaveAttribute('title', 'Gesture scroll root')
+    expect(viewport).toHaveClass('viewport-class')
+  })
+
   it('adds the active tail reserve wrapper only after a tail append', async () => {
     const user = userEvent.setup()
 

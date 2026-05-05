@@ -8,9 +8,8 @@ styling, and layout.
 ## Demo
 
 - Site: https://threadport.pprice.me/
-- Standard example: https://threadport.pprice.me/examples/standard
-- Insets example: https://threadport.pprice.me/examples/insets
-- Long response example: https://threadport.pprice.me/examples/long-response
+- Basic example: https://threadport.pprice.me/examples/basic
+- Full featured example: https://threadport.pprice.me/examples/full-featured
 
 ## Install
 

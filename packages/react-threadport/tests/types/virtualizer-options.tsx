@@ -18,10 +18,41 @@ const props: ViewportProps<Item> = {
   getItemKey: (item) => item.id,
   items: [{ id: '1' }],
   renderItem: ({ item }) => <div>{item.id}</div>,
+  scrollElementProps: {
+    'data-gesture-root': 'chat',
+    id: 'chat-scroll-root',
+    title: 'Chat scroll root',
+  },
   virtualizerOptions: safeOptions,
 }
 
 void props
+
+const scrollElementClassNameIsOwned: ViewportProps<Item> = {
+  estimateSize: () => 80,
+  getItemKey: (item) => item.id,
+  items: [{ id: '1' }],
+  renderItem: ({ item }) => <div>{item.id}</div>,
+  scrollElementProps: {
+    // @ts-expect-error Use Viewport className for the scroll element class.
+    className: 'gesture-root',
+  },
+}
+
+void scrollElementClassNameIsOwned
+
+const scrollElementScrollHandlerIsOwned: ViewportProps<Item> = {
+  estimateSize: () => 80,
+  getItemKey: (item) => item.id,
+  items: [{ id: '1' }],
+  renderItem: ({ item }) => <div>{item.id}</div>,
+  scrollElementProps: {
+    // @ts-expect-error Threadport owns the scroll handler.
+    onScroll: () => undefined,
+  },
+}
+
+void scrollElementScrollHandlerIsOwned
 
 const shorthandOverrides: ViewportProps<Item> = {
   estimateSize: () => 80,

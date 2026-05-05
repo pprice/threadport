@@ -80,6 +80,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     overscan,
     preserveScrollOnPrepend = true,
     role,
+    scrollElementProps,
     style,
     tailInset = 0,
     tailReserve,
@@ -638,6 +639,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: callers can provide an ARIA role, and labeled viewports default to region.
     <div
+      {...scrollElementProps}
       ref={scrollRef}
       aria-label={ariaLabel}
       className={className}

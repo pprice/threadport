@@ -17,7 +17,7 @@ import {
 } from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
-export default function StandardExample() {
+export default function BasicExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
@@ -38,8 +38,8 @@ export default function StandardExample() {
 
   return (
     <ExamplePage
-      activeId="standard"
-      title="Standard"
+      activeId="basic"
+      title="Basic"
       summary="A GPT-style transcript: submit a prompt, align it high, and let the response begin with room below."
       notes={[
         'The host app appends both the user prompt and assistant row.',
@@ -51,7 +51,7 @@ export default function StandardExample() {
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
           ref={viewportRef}
-          ariaLabel="Standard GPT-style transcript"
+          ariaLabel="Basic GPT-style transcript"
           className="exampleViewport"
           contentClassName="exampleContent"
           estimateSize={estimateMessageSize}

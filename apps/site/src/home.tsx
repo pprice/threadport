@@ -234,7 +234,7 @@ export function Home() {
               styling.
             </p>
             <div className="homeActions">
-              <a className="button primary" href="/examples/standard">
+              <a className="button primary" href="/examples/basic">
                 Open the live example
               </a>
               <a

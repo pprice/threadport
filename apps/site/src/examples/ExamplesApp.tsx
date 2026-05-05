@@ -1,62 +1,31 @@
+import { Menu, X } from 'lucide-react'
 import { type ReactElement, useEffect, useState } from 'react'
 import { Link, Route, Router, Switch, useLocation } from 'wouter'
 import { BrandMark } from '../lib/BrandMark'
 import { THREADPORT_VERSION } from '../version'
 import { examples, REPO_URL } from './examples-meta'
+import BasicExample from './pages/basic'
 import DataLoadingExample from './pages/data-loading'
+import FullFeaturedExample from './pages/full-featured'
 import FullscreenExample from './pages/fullscreen'
 import InsetsExample from './pages/insets'
 import JumpToBottomExample from './pages/jump-to-bottom'
 import LongResponseExample from './pages/long-response'
 import MobileExample from './pages/mobile'
 import PrependExample from './pages/prepend'
-import StandardExample from './pages/standard'
 import VariableHeightExample from './pages/variable-height'
 
 const ROUTE_COMPONENTS: Record<string, () => ReactElement> = {
+  basic: BasicExample,
   'data-loading': DataLoadingExample,
+  'full-featured': FullFeaturedExample,
   fullscreen: FullscreenExample,
   insets: InsetsExample,
   'jump-to-bottom': JumpToBottomExample,
   'long-response': LongResponseExample,
   mobile: MobileExample,
   prepend: PrependExample,
-  standard: StandardExample,
   'variable-height': VariableHeightExample,
-}
-
-function HamburgerIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      height="20"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeWidth="1.6"
-      viewBox="0 0 20 20"
-      width="20"
-    >
-      <path d="M3 6h14M3 10h14M3 14h14" />
-    </svg>
-  )
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      fill="none"
-      height="18"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeWidth="1.6"
-      viewBox="0 0 18 18"
-      width="18"
-    >
-      <path d="M4 4l10 10M14 4L4 14" />
-    </svg>
-  )
 }
 
 function GithubIcon() {
@@ -75,7 +44,7 @@ function GithubIcon() {
 
 function ExamplesRail({ onNavigate }: { onNavigate: () => void }) {
   const [location] = useLocation()
-  const activeId = location.replace(/^\//, '') || 'standard'
+  const activeId = location.replace(/^\//, '') || 'basic'
 
   return (
     <nav className="examplesRail" aria-label="Examples">
@@ -146,7 +115,11 @@ function App() {
         onClick={() => setRailOpen((current) => !current)}
         type="button"
       >
-        {railOpen ? <CloseIcon /> : <HamburgerIcon />}
+        {railOpen ? (
+          <X aria-hidden="true" size={18} />
+        ) : (
+          <Menu aria-hidden="true" size={20} />
+        )}
       </button>
       <button
         aria-hidden="true"
@@ -173,7 +146,7 @@ function RedirectToDefault() {
   const [, setLocation] = useLocation()
 
   useEffect(() => {
-    setLocation('/standard', { replace: true })
+    setLocation('/basic', { replace: true })
   }, [setLocation])
 
   return null

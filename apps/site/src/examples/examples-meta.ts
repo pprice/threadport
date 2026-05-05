@@ -13,10 +13,10 @@ export const REPO_URL = 'https://github.com/pprice/threadport'
 
 export const examples: ExampleMeta[] = [
   {
-    id: 'standard',
-    label: 'Standard',
+    id: 'basic',
+    label: 'Basic',
     description: 'A GPT-style transcript with submitted prompts aligned high.',
-    href: '/examples/standard',
+    href: '/examples/basic',
     integration: [
       'items',
       'estimateSize',
@@ -27,7 +27,26 @@ export const examples: ExampleMeta[] = [
     ],
     ownedBy: 'host',
     scope: 'Baseline',
-    sourcePath: 'apps/site/src/examples/pages/standard.tsx',
+    sourcePath: 'apps/site/src/examples/pages/basic.tsx',
+  },
+  {
+    id: 'full-featured',
+    label: 'Full featured',
+    description:
+      'A ChatGPT-style integration with staged responses and streaming Markdown.',
+    href: '/examples/full-featured',
+    integration: [
+      'scrollElementProps',
+      'staged response',
+      'streaming',
+      'onStateChange',
+      'scrollToItem',
+      'scrollToTail',
+      'tailReserve',
+    ],
+    ownedBy: 'host',
+    scope: 'Integration',
+    sourcePath: 'apps/site/src/examples/pages/full-featured.tsx',
   },
   {
     id: 'insets',

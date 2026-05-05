@@ -2,7 +2,7 @@ import type {
   ReactVirtualizerOptions,
   VirtualItem,
 } from '@tanstack/react-virtual'
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import type { ScrollAnimation, ScrollEasing } from './easing'
 
 /**
@@ -200,6 +200,13 @@ export type ViewportState = {
   totalItems: number
   /** Number of items currently rendered (after virtualization). */
   virtualItems: number
+}
+
+export type ScrollElementProps = Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'aria-label' | 'children' | 'className' | 'onScroll' | 'role' | 'style'
+> & {
+  [attribute: `data-${string}`]: boolean | number | string | undefined
 }
 
 /**
@@ -474,6 +481,13 @@ export type ViewportProps<TItem> = {
    * animation, this one is used. Defaults to a 460ms ease-out-quart.
    */
   scrollAnimation?: ScrollAnimation
+  /**
+   * Additional props spread onto the scroll element. Use this for integration
+   * hooks such as `data-*`, `id`, `title`, or gesture-system attributes.
+   * Threadport-owned props (`className`, `style`, `role`, `aria-label`,
+   * `onScroll`, and children) stay on dedicated Viewport props.
+   */
+  scrollElementProps?: ScrollElementProps
   /**
    * Inline style on the scroll element. Spread *after* the library's flex
    * defaults; override `flex` / `min-height` / `overflow` only when you

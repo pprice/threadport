@@ -3,7 +3,8 @@ import { expect, type Page, test } from '@playwright/test'
 const SITE_BASE = 'http://127.0.0.1:5176'
 
 const exampleRoutes = [
-  '/examples/standard',
+  '/examples/basic',
+  '/examples/full-featured',
   '/examples/insets',
   '/examples/long-response',
   '/examples/jump-to-bottom',
@@ -198,7 +199,7 @@ test('example details default to expanded on web dimensions', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1024, height: 768 })
-  await page.goto(`${SITE_BASE}/examples/standard`)
+  await page.goto(`${SITE_BASE}/examples/basic`)
 
   await expect(page.locator('.exampleDisclosure')).toHaveJSProperty(
     'open',
@@ -208,7 +209,7 @@ test('example details default to expanded on web dimensions', async ({
   await expect(page.locator('.integrationPanel')).toBeVisible()
 
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto(`${SITE_BASE}/examples/standard`)
+  await page.goto(`${SITE_BASE}/examples/basic`)
 
   await expect(page.locator('.exampleDisclosure')).toHaveJSProperty(
     'open',
@@ -216,6 +217,61 @@ test('example details default to expanded on web dimensions', async ({
   )
   await expect(page.locator('.noteList li').first()).toBeHidden()
   await expect(page.locator('.integrationPanel')).toBeHidden()
+})
+
+test('/examples/full-featured renders a polished chat transcript flow', async ({
+  page,
+}) => {
+  await page.goto(`${SITE_BASE}/examples/full-featured`)
+
+  await expect(page.getByText('What should we plan?')).toBeVisible()
+
+  const viewport = page.locator('.exampleViewport')
+  const composer = page.locator('textarea[aria-label="Message"]')
+
+  await expect(viewport).toHaveAttribute(
+    'data-gesture-root',
+    'full-featured-chat',
+  )
+
+  const initialComposerHeight = await composer.evaluate(
+    (element) => element.getBoundingClientRect().height,
+  )
+
+  await composer.fill('Line one\nLine two\nLine three')
+
+  const expandedComposerHeight = await composer.evaluate(
+    (element) => element.getBoundingClientRect().height,
+  )
+
+  expect(expandedComposerHeight).toBeGreaterThan(initialComposerHeight)
+
+  await composer.fill('Map the integration.')
+  await composer.press('Enter')
+
+  await expect(page.locator('.loadingPulsar')).toBeVisible()
+  await expect(page.getByText('Search the web')).toBeVisible({
+    timeout: 3500,
+  })
+  await expect(page.getByText('Integration shape')).toBeVisible({
+    timeout: 6000,
+  })
+  await expect(page.getByText('Searched the web')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy response' })).toBeVisible(
+    { timeout: 7000 },
+  )
+  await expect(page.getByText('Release checklist is ready.')).toHaveCount(0)
+  await expect(page.getByText('Integration shape is ready.')).toHaveCount(0)
+  await expect(page.getByText('diff preview')).toHaveCount(0)
+
+  await viewport.evaluate((element) => {
+    element.scrollTop = 0
+    element.dispatchEvent(new Event('scroll', { bubbles: true }))
+  })
+
+  await expect(
+    page.getByRole('button', { name: 'Jump to bottom' }),
+  ).toBeVisible()
 })
 
 test('fullscreen example fills the tablet viewport with rail navigation', async ({
@@ -274,7 +330,7 @@ test('mobile layout keeps header, example stage, and drawer controls separated',
   expect(header.height).toBeLessThanOrEqual(70)
   expect(Math.abs(header.brandTop - header.actionsTop)).toBeLessThanOrEqual(10)
 
-  await page.goto(`${SITE_BASE}/examples/standard`)
+  await page.goto(`${SITE_BASE}/examples/basic`)
 
   await expect(page.locator('.examplePanel .lede')).toBeVisible()
   await expect(page.locator('.noteList li')).toHaveCount(3)

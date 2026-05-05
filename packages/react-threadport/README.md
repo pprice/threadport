@@ -8,7 +8,8 @@ styling, and layout.
 ## Demo
 
 - Site: https://threadport.pprice.me/
-- Standard example: https://threadport.pprice.me/examples/standard
+- Basic example: https://threadport.pprice.me/examples/basic
+- Full featured example: https://threadport.pprice.me/examples/full-featured
 - Insets example: https://threadport.pprice.me/examples/insets
 - Long response example: https://threadport.pprice.me/examples/long-response
 
@@ -40,6 +41,8 @@ export function Chat({ messages }: { messages: Message[] }) {
         headInset={64}
         tailInset={168}
         initialAnchor="tail"
+        className="chatScroll"
+        scrollElementProps={{ 'data-gesture-root': 'chat' }}
         scrollAnimation={ThreadPort.Animation.easeOutCubic(420)}
         tailReserve
         virtualizerOptions={{ overscan: 12 }}
@@ -93,6 +96,7 @@ export function Chat({ messages }: { messages: Message[] }) {
 | `preserveScrollOnPrepend` | `boolean` | No | Keeps the visible anchor stable when items are inserted at the head. |
 | `role` | `string` | No | ARIA role for the scroll element. |
 | `scrollAnimation` | `ScrollAnimation` | No | Default animation for imperative scroll commands. |
+| `scrollElementProps` | `ScrollElementProps` | No | Extra props for the scroll element, such as `data-*`, `id`, and `title`. Use `className` for classes. |
 | `style` | `CSSProperties` | No | Inline style for the scroll element. |
 | `tailInset` | `number` | No | Persistent overlap at the tail, usually composer space. |
 | `tailReserve` | `boolean \| TailReserveOptions` | No | Gives the active appended tail item a viewport-sized minimum height. |
@@ -164,6 +168,71 @@ Other rules of thumb:
 - Keep composer and floating controls outside `Viewport`. Use `Overlay` with `placement="head"` / `placement="tail"` for frame-relative chrome.
 - Pass overlap as `headInset` / `tailInset`; do not fake it with message padding.
 - Use `tailReserve` when newly appended responses should start with a screen of empty space beneath them.
+
+## Chat Transcript Patterns
+
+The full featured example at
+https://threadport.pprice.me/examples/full-featured shows a staged assistant
+response with loading/search phases, streaming Markdown, feedback controls, a
+variable-height composer, and a jump-to-bottom affordance.
+
+For mixed row types, keep one virtualized item stream and render by
+discriminated type:
+
+```tsx
+type TranscriptItem =
+  | { kind: 'message'; id: string; role: 'user' | 'assistant'; body: string }
+  | { kind: 'tool'; id: string; label: string; state: 'running' | 'complete' }
+  | { kind: 'image'; id: string; src: string; width: number; height: number }
+
+<ThreadPort.Viewport
+  items={items}
+  getItemKey={(item) => item.id}
+  estimateSize={(item) => estimateTranscriptRow(item)}
+  renderItem={({ item }) => <TranscriptRow item={item} />}
+/>
+```
+
+Use stable keys for every row, including tool/status/image rows. If the row
+scrolls with the transcript, make it an item; keep only fixed chrome such as
+the composer or jump button in `Overlay`.
+
+For tail behavior during streaming, treat `isAtTail` as policy input rather
+than a command. Capture whether the user was following the tail before you
+append or extend the assistant row, then decide whether to follow the stream or
+show a jump control:
+
+```tsx
+const stateRef = useRef<ThreadPort.ViewportState | null>(null)
+const [showJump, setShowJump] = useState(false)
+
+function appendAssistantDelta(delta: string) {
+  const wasAtTail = stateRef.current?.isAtTail ?? true
+
+  setItems((items) => applyAssistantDelta(items, delta))
+
+  if (wasAtTail) {
+    requestAnimationFrame(() => viewportRef.current?.scrollToTail({ duration: 0 }))
+  } else {
+    setShowJump(true)
+  }
+}
+```
+
+That policy is separate from "submitted prompt to head" behavior. Many chat apps
+scroll the new user message to the head, then follow live output only while the
+human stays near the tail.
+
+For mobile Safari and dynamic Markdown heights:
+
+- Put app gesture hooks on the scroll element with `scrollElementProps`, and
+  classes/styles through `className` / `style`.
+- Avoid nested touch scrollers around the viewport; let Threadport own the
+  scroll container.
+- Give images, previews, and embeds stable dimensions or aspect ratios before
+  content loads.
+- Let Markdown reflow normally. Threadport observes rendered row height changes
+  and preserves the appropriate anchor after measurement.
 
 ## Development
 
