@@ -619,7 +619,6 @@ h1 {
 }
 
 .examplePanel h1 {
-  max-width: 11ch;
   margin: 0;
   font-size: 2.65rem;
   font-weight: 600;
