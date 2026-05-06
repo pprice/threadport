@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/pprice/threadport/compare/v1.1.0...v1.2.0) (2026-05-06)
+
+
+### Features
+
+* **react-threadport:** add onVisibilityChange callback on Viewport ([356e42f](https://github.com/pprice/threadport/commit/356e42f3d1b04189a4082c8cb72a1d1eca9b8c4c))
+
 ## [1.1.0](https://github.com/pprice/threadport/compare/v1.0.1...v1.1.0) (2026-05-05)
 
 
