@@ -41,7 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-virtual": "^3.13.24"
+    "@tanstack/react-virtual": ">=3.13.0 <4"
   },
   "peerDependencies": {
     "react": ">=18.3 || >=19"
