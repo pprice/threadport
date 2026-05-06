@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/pprice/threadport/compare/v1.0.1...v1.1.0) (2026-05-05)
+
+
+### Features
+
+* **react-threadport:** expose scrollElementProps on Viewport ([3be807d](https://github.com/pprice/threadport/commit/3be807d98271bc4978d8e019b9118bacd3948939))
+
 ## [1.0.1](https://github.com/pprice/threadport/compare/v1.0.0...v1.0.1) (2026-05-05)
 
 
