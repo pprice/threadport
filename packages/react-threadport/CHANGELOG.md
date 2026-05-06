@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/pprice/threadport/compare/v1.2.0...v1.3.0) (2026-05-06)
+
+
+### Features
+
+* **react-threadport:** readiness, awaitMount, selectors, visibility tunables ([9fd0182](https://github.com/pprice/threadport/commit/9fd01820026b0be4b62aa0c9fbe2aa007a613adb))
+
 ## [1.2.0](https://github.com/pprice/threadport/compare/v1.1.0...v1.2.0) (2026-05-06)
 
 
