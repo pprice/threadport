@@ -136,14 +136,15 @@ export const examples: ExampleMeta[] = [
   {
     id: 'visibility',
     label: 'Visibility',
-    description: 'Mark items as read as they scroll into view.',
+    description:
+      'Mark items as read with threshold + dwell so scroll-flybys do not count.',
     href: '/examples/visibility',
     integration: [
       'onVisibilityChange',
-      'entered',
-      'exited',
-      'visible',
-      'Overlay head',
+      'visibilityOptions',
+      'thresholdPercent',
+      'dwellMs',
+      'useViewportSelector',
     ],
     ownedBy: 'host',
     scope: 'Policy',

@@ -14,6 +14,11 @@ import {
 } from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
+const VISIBILITY_OPTIONS = {
+  thresholdPercent: 0.5,
+  dwellMs: 500,
+} satisfies ThreadPort.VisibilityOptions
+
 export default function VisibilityExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
   const reducedMotion = useReducedMotion()
@@ -37,11 +42,11 @@ export default function VisibilityExample() {
     <ExamplePage
       activeId="visibility"
       title="Visibility tracking"
-      summary="Mark items as read when they scroll into view. onVisibilityChange fires when the in-rect set changes; the entered array drives a Set of read keys."
+      summary="Mark items as read with a threshold + dwell so scroll-flybys don't count. The unread badge subscribes to viewport state via useViewportSelector — no onStateChange plumbing for that slice."
       notes={[
-        'onVisibilityChange fires only on set changes, not on every scroll frame.',
-        'entered is the natural input for mark-as-read; exited fits cleanup work like releasing embeds.',
-        'visible carries the current full set in DOM order, so analytics-style consumers do not need to maintain it.',
+        'visibilityOptions tighten the signal: an item must be 50% visible for 500ms before it counts as entered.',
+        'The unread badge is a sibling component that reads isAtHead via useViewportSelector and only re-renders when that slice changes.',
+        'visible carries the current full set in DOM order; exits still fire immediately when an item drops below the threshold.',
       ]}
       aside={
         <>
@@ -83,28 +88,39 @@ export default function VisibilityExample() {
             />
           )}
           virtualizerOptions={{ overscan: 6 }}
+          visibilityOptions={VISIBILITY_OPTIONS}
         />
         <ThreadPort.Overlay className="visibilityCounterLayer" placement="head">
-          <div
-            aria-live="polite"
-            className="visibilityCounter"
-            data-state={unread === 0 ? 'caught-up' : 'unread'}
-          >
-            {unread === 0 ? (
-              <>
-                <Eye aria-hidden="true" size={14} />
-                <span>All caught up</span>
-              </>
-            ) : (
-              <>
-                <EyeOff aria-hidden="true" size={14} />
-                <span>{unread} unread</span>
-              </>
-            )}
-          </div>
+          <VisibilityCounter unread={unread} />
         </ThreadPort.Overlay>
       </SettledViewportRoot>
     </ExamplePage>
+  )
+}
+
+function VisibilityCounter({ unread }: { unread: number }) {
+  const isAtHead = ThreadPort.useViewportSelector((state) => state.isAtHead)
+
+  if (unread === 0) {
+    return (
+      <div
+        aria-live="polite"
+        className="visibilityCounter"
+        data-state="caught-up"
+      >
+        <Eye aria-hidden="true" size={14} />
+        <span>All caught up</span>
+      </div>
+    )
+  }
+
+  return (
+    <div aria-live="polite" className="visibilityCounter" data-state="unread">
+      <EyeOff aria-hidden="true" size={14} />
+      <span>
+        {unread} unread{isAtHead ? '' : ' above'}
+      </span>
+    </div>
   )
 }
 
