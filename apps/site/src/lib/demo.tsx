@@ -1,4 +1,5 @@
 import * as ThreadPort from '@phipri/react-threadport'
+import { ArrowUp } from 'lucide-react'
 import {
   type Dispatch,
   type FormEvent,
@@ -7,7 +8,10 @@ import {
   type ReactNode,
   type RefObject,
   type SetStateAction,
+  useCallback,
   useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
 } from 'react'
 
@@ -369,6 +373,8 @@ export function SettledViewportRoot({
   )
 }
 
+const COMPOSER_MAX_HEIGHT_PX = 164
+
 export function Composer({
   disabled,
   onSubmit,
@@ -379,6 +385,18 @@ export function Composer({
   placeholder?: string
 }) {
   const [value, setValue] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current
+
+    if (!textarea) {
+      return
+    }
+
+    textarea.style.height = 'auto'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, COMPOSER_MAX_HEIGHT_PX)}px`
+  }, [value])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -409,16 +427,17 @@ export function Composer({
   return (
     <form className="composer" onSubmit={handleSubmit}>
       <textarea
+        ref={textareaRef}
         aria-label="Message"
         disabled={disabled}
-        onKeyDown={handleKeyDown}
         onChange={(event) => setValue(event.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         rows={1}
         value={value}
       />
       <button type="submit" aria-label="Send message" disabled={disabled}>
-        ↑
+        <ArrowUp aria-hidden="true" size={18} />
       </button>
     </form>
   )
@@ -442,4 +461,67 @@ export function useReducedMotion() {
   }, [])
 
   return reducedMotion
+}
+
+export const EXAMPLE_VIEWPORT_BASE = {
+  className: 'exampleViewport',
+  contentClassName: 'exampleContent',
+  estimateSize: estimateMessageSize,
+  getItemKey: getMessageKey,
+  itemClassName: 'exampleRow',
+  itemGap: EXAMPLE_ITEM_GAP,
+  renderItem: ({ item }: { item: DemoMessage }) => (
+    <MessageView message={item} />
+  ),
+  role: 'log',
+} satisfies Partial<ThreadPort.ViewportProps<DemoMessage>>
+
+export const EXAMPLE_GPT_VIEWPORT_DEFAULTS = {
+  ...EXAMPLE_VIEWPORT_BASE,
+  headInset: 28,
+  initialAnchor: 'tail',
+  tailInset: 108,
+  tailReserve: { className: 'tailReserve gptTailReserve' },
+  virtualizerOptions: { overscan: 8 },
+} satisfies Partial<ThreadPort.ViewportProps<DemoMessage>>
+
+export function ComposerDock({
+  disabled,
+  onSubmit,
+  placeholder,
+}: {
+  disabled?: boolean
+  onSubmit: (value: string) => void
+  placeholder?: string
+}) {
+  return (
+    <ThreadPort.Overlay className="composerDock" placement="tail">
+      <Composer
+        disabled={disabled}
+        onSubmit={onSubmit}
+        placeholder={placeholder}
+      />
+    </ThreadPort.Overlay>
+  )
+}
+
+export function useGptCommitMessage(
+  viewportRef: RefObject<ThreadPort.ViewportHandle | null>,
+  setMessages: Dispatch<SetStateAction<DemoMessage[]>>,
+  assistantBody: string,
+) {
+  const reducedMotion = useReducedMotion()
+
+  return useCallback(
+    (value: string) => {
+      const { assistantMessage, userMessage } = createGptExchange(
+        value,
+        assistantBody,
+      )
+
+      setMessages((current) => [...current, userMessage, assistantMessage])
+      scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
+    },
+    [assistantBody, reducedMotion, setMessages, viewportRef],
+  )
 }

@@ -1,18 +1,14 @@
 import { useRef, useState } from 'react'
 import {
-  Composer,
-  createGptExchange,
+  ComposerDock,
   createMessage,
   createTranscript,
   type DemoMessage,
-  EXAMPLE_ITEM_GAP,
-  estimateMessageSize,
-  getMessageKey,
-  MessageView,
+  EXAMPLE_GPT_VIEWPORT_DEFAULTS,
   Metrics,
   SettledViewportRoot,
-  scrollPromptToHead,
   ThreadPort,
+  useGptCommitMessage,
   useInitialViewportSettled,
   useReducedMotion,
 } from '../../lib/demo'
@@ -26,22 +22,17 @@ export default function JumpToBottomExample() {
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
+  const commitMessage = useGptCommitMessage(
+    viewportRef,
+    setMessages,
+    'Submitted prompts still jump to the top. The jump control is reserved for returning to unread tail content.',
+  )
   const showJump = Boolean(state && state.distanceFromTail > 140)
 
   function tailAnimation(duration = 360) {
     return reducedMotion
       ? { duration: 0 }
       : ThreadPort.Animation.easeOutCubic(duration)
-  }
-
-  function commitMessage(value: string) {
-    const { assistantMessage, userMessage } = createGptExchange(
-      value,
-      'Submitted prompts still jump to the top. The jump control is reserved for returning to unread tail content.',
-    )
-
-    setMessages((current) => [...current, userMessage, assistantMessage])
-    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
   }
 
   function appendRemoteReply() {
@@ -94,23 +85,11 @@ export default function JumpToBottomExample() {
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
+          {...EXAMPLE_GPT_VIEWPORT_DEFAULTS}
           ref={viewportRef}
           ariaLabel="Jump to bottom transcript"
-          className="exampleViewport"
-          contentClassName="exampleContent"
-          estimateSize={estimateMessageSize}
-          getItemKey={getMessageKey}
-          headInset={28}
-          initialAnchor="tail"
-          itemGap={EXAMPLE_ITEM_GAP}
-          itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
-          renderItem={({ item }) => <MessageView message={item} />}
-          role="log"
-          tailInset={108}
-          tailReserve={{ className: 'tailReserve gptTailReserve' }}
-          virtualizerOptions={{ overscan: 8 }}
         />
         {showJump && (
           <ThreadPort.Overlay className="jumpOverlay" placement="fill">
@@ -123,9 +102,7 @@ export default function JumpToBottomExample() {
             </button>
           </ThreadPort.Overlay>
         )}
-        <ThreadPort.Overlay className="composerDock" placement="tail">
-          <Composer onSubmit={commitMessage} />
-        </ThreadPort.Overlay>
+        <ComposerDock onSubmit={commitMessage} />
       </SettledViewportRoot>
     </ExamplePage>
   )

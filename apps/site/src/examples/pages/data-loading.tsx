@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  Composer,
-  createGptExchange,
+  ComposerDock,
   createOlderBatch,
   createTranscript,
   DATA_LOADING_HEAD_RESERVE,
   type DemoMessage,
-  EXAMPLE_ITEM_GAP,
-  estimateMessageSize,
+  EXAMPLE_GPT_VIEWPORT_DEFAULTS,
   estimateVirtualBatchSize,
-  getMessageKey,
-  MessageView,
   Metrics,
   SettledViewportRoot,
-  scrollPromptToHead,
   ThreadPort,
+  useGptCommitMessage,
   useInitialViewportSettled,
   useReducedMotion,
 } from '../../lib/demo'
@@ -38,6 +34,11 @@ export default function DataLoadingExample() {
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
+  const commitMessage = useGptCommitMessage(
+    viewportRef,
+    setMessages,
+    'Loading older data is independent from the GPT-style submit behavior at the tail.',
+  )
 
   function finishLoad() {
     const batch = createOlderBatch(seedRef.current)
@@ -97,16 +98,6 @@ export default function DataLoadingExample() {
     maybeLoadOlder(nextState)
   }
 
-  function commitMessage(value: string) {
-    const { assistantMessage, userMessage } = createGptExchange(
-      value,
-      'Loading older data is independent from the GPT-style submit behavior at the tail.',
-    )
-
-    setMessages((current) => [...current, userMessage, assistantMessage])
-    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
-  }
-
   useEffect(
     () => () => {
       if (timerRef.current !== null) {
@@ -146,32 +137,20 @@ export default function DataLoadingExample() {
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
+          {...EXAMPLE_GPT_VIEWPORT_DEFAULTS}
           ref={viewportRef}
           ariaLabel="Data loading transcript"
-          className="exampleViewport"
-          contentClassName="exampleContent"
-          estimateSize={estimateMessageSize}
-          getItemKey={getMessageKey}
           headInset={DATA_LOADING_HEAD_INSET}
           headReserve={headReserve}
-          initialAnchor="tail"
-          itemGap={EXAMPLE_ITEM_GAP}
-          itemClassName="exampleRow"
           items={messages}
           onStateChange={handleStateChange}
           preserveScrollOnPrepend
-          renderItem={({ item }) => <MessageView message={item} />}
-          role="log"
-          tailInset={108}
-          tailReserve={{ className: 'tailReserve gptTailReserve' }}
           virtualizerOptions={{ overscan: 10 }}
         />
         <ThreadPort.Overlay className="dataLoadingDock" placement="head">
           {loading && <div className="loadingChip">Loading older messages</div>}
         </ThreadPort.Overlay>
-        <ThreadPort.Overlay className="composerDock" placement="tail">
-          <Composer onSubmit={commitMessage} />
-        </ThreadPort.Overlay>
+        <ComposerDock onSubmit={commitMessage} />
       </SettledViewportRoot>
     </ExamplePage>
   )

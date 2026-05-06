@@ -1,3 +1,4 @@
+import { ArrowUp } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { REPO_URL, SiteHeader } from './Header'
 import {
@@ -292,7 +293,9 @@ export function Home() {
                 <div className="previewComposer" aria-hidden="true">
                   <span>{draft || 'Message Threadport'}</span>
                   <span className="typingCaret" />
-                  <button type="button">↑</button>
+                  <button type="button">
+                    <ArrowUp size={16} />
+                  </button>
                 </div>
               </ThreadPort.Overlay>
             </ThreadPort.Root>

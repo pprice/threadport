@@ -3,8 +3,7 @@ import { memo, useRef, useState } from 'react'
 import {
   createTranscript,
   type DemoMessage,
-  EXAMPLE_ITEM_GAP,
-  estimateMessageSize,
+  EXAMPLE_VIEWPORT_BASE,
   getMessageKey,
   MessageView,
   Metrics,
@@ -46,11 +45,7 @@ export default function VisibilityExample() {
       ]}
       aside={
         <>
-          <button
-            type="button"
-            disabled={readKeys.size === 0}
-            onClick={reset}
-          >
+          <button type="button" disabled={readKeys.size === 0} onClick={reset}>
             Reset to unread
           </button>
           <Metrics state={viewportSettled ? state : null} />
@@ -59,16 +54,11 @@ export default function VisibilityExample() {
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
+          {...EXAMPLE_VIEWPORT_BASE}
           ref={viewportRef}
           ariaLabel="Visibility tracking transcript"
-          className="exampleViewport"
-          contentClassName="exampleContent"
-          estimateSize={estimateMessageSize}
-          getItemKey={getMessageKey}
           headInset={56}
           initialAnchor="head"
-          itemGap={EXAMPLE_ITEM_GAP}
-          itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
           onVisibilityChange={({ entered }) => {
@@ -92,7 +82,6 @@ export default function VisibilityExample() {
               read={readKeys.has(getMessageKey(item))}
             />
           )}
-          role="log"
           virtualizerOptions={{ overscan: 6 }}
         />
         <ThreadPort.Overlay className="visibilityCounterLayer" placement="head">

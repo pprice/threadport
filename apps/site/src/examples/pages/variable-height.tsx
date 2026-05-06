@@ -1,18 +1,13 @@
 import { useRef, useState } from 'react'
 import {
-  Composer,
-  createGptExchange,
+  ComposerDock,
   createTranscript,
   type DemoMessage,
-  EXAMPLE_ITEM_GAP,
-  estimateMessageSize,
-  getMessageKey,
-  MessageView,
+  EXAMPLE_GPT_VIEWPORT_DEFAULTS,
   Metrics,
-  scrollPromptToHead,
   ThreadPort,
+  useGptCommitMessage,
   useInitialViewportSettled,
-  useReducedMotion,
 } from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
@@ -26,23 +21,17 @@ const PRESETS: ReadonlyArray<{ label: string; value: number }> = [
 
 export default function VariableHeightExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
-  const reducedMotion = useReducedMotion()
   const [hostHeight, setHostHeight] = useState(520)
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
     createTranscript(36),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
-
-  function commitMessage(value: string) {
-    const { assistantMessage, userMessage } = createGptExchange(
-      value,
-      'The host container sets the viewport height. Drag the slider or pick a preset to watch the viewport adapt without a remount.',
-    )
-
-    setMessages((current) => [...current, userMessage, assistantMessage])
-    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
-  }
+  const commitMessage = useGptCommitMessage(
+    viewportRef,
+    setMessages,
+    'The host container sets the viewport height. Drag the slider or pick a preset to watch the viewport adapt without a remount.',
+  )
 
   return (
     <ExamplePage
@@ -101,27 +90,13 @@ export default function VariableHeightExample() {
           }`}
         >
           <ThreadPort.Viewport
+            {...EXAMPLE_GPT_VIEWPORT_DEFAULTS}
             ref={viewportRef}
             ariaLabel="Variable height transcript"
-            className="exampleViewport"
-            contentClassName="exampleContent"
-            estimateSize={estimateMessageSize}
-            getItemKey={getMessageKey}
-            headInset={28}
-            initialAnchor="tail"
-            itemGap={EXAMPLE_ITEM_GAP}
-            itemClassName="exampleRow"
             items={messages}
             onStateChange={setState}
-            renderItem={({ item }) => <MessageView message={item} />}
-            role="log"
-            tailInset={108}
-            tailReserve={{ className: 'tailReserve gptTailReserve' }}
-            virtualizerOptions={{ overscan: 8 }}
           />
-          <ThreadPort.Overlay className="composerDock" placement="tail">
-            <Composer onSubmit={commitMessage} />
-          </ThreadPort.Overlay>
+          <ComposerDock onSubmit={commitMessage} />
         </ThreadPort.Root>
       </div>
     </ExamplePage>

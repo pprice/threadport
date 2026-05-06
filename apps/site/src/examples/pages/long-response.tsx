@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  Composer,
+  ComposerDock,
   createMessage,
   createTranscript,
   type DemoMessage,
-  EXAMPLE_ITEM_GAP,
-  estimateMessageSize,
-  getMessageKey,
-  MessageView,
+  EXAMPLE_GPT_VIEWPORT_DEFAULTS,
   Metrics,
   SettledViewportRoot,
   scrollPromptToHead,
@@ -102,27 +99,14 @@ export default function LongResponseExample() {
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
+          {...EXAMPLE_GPT_VIEWPORT_DEFAULTS}
           ref={viewportRef}
           ariaLabel="Long response tail reserve transcript"
-          className="exampleViewport"
-          contentClassName="exampleContent"
-          estimateSize={estimateMessageSize}
-          getItemKey={getMessageKey}
-          headInset={28}
-          initialAnchor="tail"
-          itemGap={EXAMPLE_ITEM_GAP}
-          itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
-          renderItem={({ item }) => <MessageView message={item} />}
-          role="log"
-          tailInset={108}
           tailReserve={{ className: 'tailReserve longTailReserve' }}
-          virtualizerOptions={{ overscan: 8 }}
         />
-        <ThreadPort.Overlay className="composerDock" placement="tail">
-          <Composer onSubmit={commitMessage} />
-        </ThreadPort.Overlay>
+        <ComposerDock onSubmit={commitMessage} />
       </SettledViewportRoot>
     </ExamplePage>
   )

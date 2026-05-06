@@ -1,40 +1,29 @@
 import { useRef, useState } from 'react'
 import {
-  Composer,
-  createGptExchange,
+  ComposerDock,
   createTranscript,
   type DemoMessage,
-  EXAMPLE_ITEM_GAP,
-  estimateMessageSize,
-  getMessageKey,
-  MessageView,
+  EXAMPLE_GPT_VIEWPORT_DEFAULTS,
   Metrics,
   SettledViewportRoot,
-  scrollPromptToHead,
   ThreadPort,
+  useGptCommitMessage,
   useInitialViewportSettled,
-  useReducedMotion,
 } from '../../lib/demo'
 import { ExamplePage } from '../ExamplePage'
 
 export default function BasicExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
-  const reducedMotion = useReducedMotion()
   const [messages, setMessages] = useState<DemoMessage[]>(() =>
     createTranscript(36),
   )
   const [state, setState] = useState<ThreadPort.ViewportState | null>(null)
   const viewportSettled = useInitialViewportSettled(state)
-
-  function commitMessage(value: string) {
-    const { assistantMessage, userMessage } = createGptExchange(
-      value,
-      'The prompt is aligned below the head inset, then the assistant response starts in the open space beneath it.',
-    )
-
-    setMessages((current) => [...current, userMessage, assistantMessage])
-    scrollPromptToHead(viewportRef, userMessage.id, reducedMotion)
-  }
+  const commitMessage = useGptCommitMessage(
+    viewportRef,
+    setMessages,
+    'The prompt is aligned below the head inset, then the assistant response starts in the open space beneath it.',
+  )
 
   return (
     <ExamplePage
@@ -50,27 +39,13 @@ export default function BasicExample() {
     >
       <SettledViewportRoot settled={viewportSettled}>
         <ThreadPort.Viewport
+          {...EXAMPLE_GPT_VIEWPORT_DEFAULTS}
           ref={viewportRef}
           ariaLabel="Basic GPT-style transcript"
-          className="exampleViewport"
-          contentClassName="exampleContent"
-          estimateSize={estimateMessageSize}
-          getItemKey={getMessageKey}
-          headInset={28}
-          initialAnchor="tail"
-          itemGap={EXAMPLE_ITEM_GAP}
-          itemClassName="exampleRow"
           items={messages}
           onStateChange={setState}
-          renderItem={({ item }) => <MessageView message={item} />}
-          role="log"
-          tailInset={108}
-          tailReserve={{ className: 'tailReserve gptTailReserve' }}
-          virtualizerOptions={{ overscan: 8 }}
         />
-        <ThreadPort.Overlay className="composerDock" placement="tail">
-          <Composer onSubmit={commitMessage} />
-        </ThreadPort.Overlay>
+        <ComposerDock onSubmit={commitMessage} />
       </SettledViewportRoot>
     </ExamplePage>
   )

@@ -1,24 +1,16 @@
 import {
   ArrowDown,
-  ArrowUp,
   Clipboard,
   RefreshCcw,
   Search,
   ThumbsDown,
   ThumbsUp,
 } from 'lucide-react'
-import {
-  type FormEvent,
-  type KeyboardEvent,
-  memo,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
+  Composer,
   EXAMPLE_ITEM_GAP,
   Metrics,
   SettledViewportRoot,
@@ -221,72 +213,6 @@ const FullFeatureRow = memo(function FullFeatureRow({
 }) {
   return <MessageRow item={item} />
 })
-
-function FullFeatureComposer({
-  disabled,
-  onSubmit,
-}: {
-  disabled?: boolean
-  onSubmit: (value: string) => void
-}) {
-  const [value, setValue] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
-
-  useLayoutEffect(() => {
-    const textarea = textareaRef.current
-
-    if (!textarea) {
-      return
-    }
-
-    textarea.style.height = 'auto'
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 164)}px`
-  }, [value])
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const text = value.trim()
-
-    if (!text || disabled) {
-      return
-    }
-
-    onSubmit(text)
-    setValue('')
-  }
-
-  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (
-      event.key !== 'Enter' ||
-      event.shiftKey ||
-      event.nativeEvent.isComposing
-    ) {
-      return
-    }
-
-    event.preventDefault()
-    event.currentTarget.form?.requestSubmit()
-  }
-
-  return (
-    <form className="fullFeatureComposer" onSubmit={submit}>
-      <textarea
-        ref={textareaRef}
-        aria-label="Message"
-        disabled={disabled}
-        onChange={(event) => setValue(event.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Message Threadport"
-        rows={1}
-        value={value}
-      />
-      <button type="submit" aria-label="Send message" disabled={disabled}>
-        <ArrowUp size={18} />
-      </button>
-    </form>
-  )
-}
 
 export default function FullFeaturedExample() {
   const viewportRef = useRef<ThreadPort.ViewportHandle | null>(null)
@@ -521,12 +447,12 @@ export default function FullFeaturedExample() {
           <div className="fullFeatureEmptyState" aria-hidden={hasMessages}>
             <h2>Send a prompt. The tail holds.</h2>
             <p>
-              Streamed rows land in the reserved tail below. The composer
-              lifts when empty, then docks once a reply begins.
+              Streamed rows land in the reserved tail below. The composer lifts
+              when empty, then docks once a reply begins.
             </p>
           </div>
           <div className="fullFeatureComposerCard">
-            <FullFeatureComposer disabled={isResponding} onSubmit={runPrompt} />
+            <Composer disabled={isResponding} onSubmit={runPrompt} />
           </div>
         </ThreadPort.Overlay>
       </SettledViewportRoot>
