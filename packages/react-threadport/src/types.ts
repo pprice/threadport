@@ -163,7 +163,33 @@ export type ScrollToItemOptions = {
    * the Viewport's `scrollAnimation` prop.
    */
   animation?: ScrollAnimation
+  /**
+   * Defer the scroll until the next frame after the target item appears in
+   * the items array. Use this when calling `scrollToItem` immediately after
+   * a `setItems(append)` — the new item won't be in the rendered DOM until
+   * after React commits, and a synchronous `scrollToItem` call would resolve
+   * with `'rejected'` (key not found yet).
+   *
+   * If the key never appears within ~1000ms, the returned promise resolves
+   * with `'rejected'`. Cancellation (user wheel/touch, another scroll) still
+   * resolves as `'cancelled'`.
+   *
+   * Defaults to `false`.
+   */
+  awaitMount?: boolean
 }
+
+/**
+ * Result of an imperative scroll command.
+ *
+ * - `completed` — animation reached the target (or instant-jumped under
+ *   reduced motion / `{ duration: 0 }`).
+ * - `cancelled` — interrupted by user wheel/touch/keydown, by another scroll
+ *   command, or by `stopScrollAnimation()`.
+ * - `rejected` — the target couldn't be resolved (out-of-range index, missing
+ *   key, or `awaitMount` timed out before the key appeared).
+ */
+export type ScrollResult = 'completed' | 'cancelled' | 'rejected'
 
 /**
  * Snapshot of the Viewport's scroll state.
@@ -184,6 +210,18 @@ export type ViewportState = {
   isAtHead: boolean
   /** True when scroll position is within `atTailThreshold` pixels of the tail. */
   isAtTail: boolean
+  /**
+   * One-shot readiness signal. Starts `false`, becomes `true` after the
+   * first settled-state emission (i.e. after the initial paint has committed
+   * and rendered rows have measured), and stays `true` for the lifetime of
+   * the Viewport. Use this to gate first-paint UI (e.g. fade in a transcript
+   * once measurements settle, or hide a scrollbar until layout stabilizes).
+   *
+   * Special case: a Viewport that mounts with `items.length === 0` reports
+   * `isReady: true` immediately — there's nothing to wait for, and empty-
+   * state UIs shouldn't be hidden behind a settling gate.
+   */
+  isReady: boolean
   /** True while a programmatic or user-driven scroll is in flight. */
   isScrolling: boolean
   /** Width of the scrollbar lane in CSS pixels. Mirrors {@link RootState.scrollbarInlineSize}. */
@@ -230,6 +268,37 @@ export type VisibilityChange = {
   exited: ItemKey[]
   /** Current full visible set, in DOM order. */
   visible: ItemKey[]
+}
+
+/**
+ * Tunable thresholds for {@link ViewportProps.onVisibilityChange}.
+ *
+ * Defaults preserve the historical "any pixel of overlap counts, fire on
+ * every change" behavior. Tighten them for read-receipt-style use cases
+ * where casual scroll-by glances shouldn't count as "visible."
+ */
+export type VisibilityOptions = {
+  /**
+   * Fraction of an item's bounding rect that must overlap the viewport for
+   * it to count as visible. `0` (default) means any pixel of overlap
+   * qualifies; `0.5` means half the row must be on-screen. Range `[0, 1]`.
+   */
+  thresholdPercent?: number
+  /**
+   * The item must remain at-or-above the threshold for at least this many
+   * milliseconds before it appears in the next `entered` array. Use this to
+   * filter out scroll-flyby noise for read receipts. Defaults to `0`
+   * (immediate). Exits still fire as soon as an item drops below the
+   * threshold, regardless of dwell.
+   */
+  dwellMs?: number
+  /**
+   * Trailing-debounce the entire visibility computation by this many
+   * milliseconds. Useful when a coarse signal is enough and the cost of
+   * computing on every scroll frame is unwelcome. Defaults to `0` (compute
+   * on every change).
+   */
+  debounceMs?: number
 }
 
 /**
@@ -347,29 +416,54 @@ export type ViewportHandle = {
    * but isn't observable by the built-in ResizeObserver.
    */
   measure: () => void
-  /** Animate to the head (top) of the transcript. */
-  scrollToHead: (options?: ScrollAnimation) => void
+  /**
+   * Animate to the head (top) of the transcript.
+   *
+   * Returns a {@link ScrollResult} promise: `'completed'` on landing,
+   * `'cancelled'` if interrupted, `'rejected'` if the scroll element is
+   * unavailable. Safe to ignore the return value.
+   */
+  scrollToHead: (options?: ScrollAnimation) => Promise<ScrollResult>
   /**
    * Animate to a specific item by index.
+   *
+   * Returns a {@link ScrollResult} promise: `'completed'` on landing,
+   * `'cancelled'` if interrupted, `'rejected'` for an out-of-range index.
+   * Safe to ignore the return value.
    *
    * @param index Zero-based index into `items`.
    * @param options Alignment and animation. See {@link ScrollToItemOptions}.
    */
-  scrollToIndex: (index: number, options?: ScrollToItemOptions) => void
+  scrollToIndex: (
+    index: number,
+    options?: ScrollToItemOptions,
+  ) => Promise<ScrollResult>
   /**
    * Animate to a specific item by its stable key (the value `getItemKey`
    * returned for that item). The standard "scroll the new prompt to the
    * top after submit" call.
    *
+   * Returns a {@link ScrollResult} promise: `'completed'` on landing,
+   * `'cancelled'` if interrupted, `'rejected'` if the key isn't present
+   * (and `awaitMount` either wasn't set or timed out). Safe to ignore the
+   * return value.
+   *
    * @param key The item's stable key, as returned by `getItemKey`.
-   * @param options Alignment and animation. See {@link ScrollToItemOptions}.
+   * @param options Alignment, animation, and `awaitMount`. See {@link ScrollToItemOptions}.
    */
-  scrollToItem: (key: ItemKey, options?: ScrollToItemOptions) => void
+  scrollToItem: (
+    key: ItemKey,
+    options?: ScrollToItemOptions,
+  ) => Promise<ScrollResult>
   /**
    * Animate to the tail (bottom) of the transcript, including any active
    * tail reserve. Call this from a "jump to bottom" button.
+   *
+   * Returns a {@link ScrollResult} promise: `'completed'` on landing,
+   * `'cancelled'` if interrupted, `'rejected'` if the scroll element is
+   * unavailable. Safe to ignore the return value.
    */
-  scrollToTail: (options?: ScrollAnimation) => void
+  scrollToTail: (options?: ScrollAnimation) => Promise<ScrollResult>
   /**
    * Cancel any in-flight scroll animation. User wheel/touch input cancels
    * animations automatically; this is for programmatic interruption (e.g.
@@ -495,6 +589,16 @@ export type ViewportProps<TItem> = {
    * }}
    */
   onVisibilityChange?: (change: VisibilityChange) => void
+  /**
+   * Tunables for `onVisibilityChange`: overlap threshold, dwell time, and
+   * trailing debounce. See {@link VisibilityOptions}. Defaults preserve the
+   * historical "any overlap, fire on every change" behavior so existing
+   * integrations are unchanged.
+   *
+   * Visibility computation is skipped entirely when no `onVisibilityChange`
+   * handler is provided, regardless of these options.
+   */
+  visibilityOptions?: VisibilityOptions
   /**
    * Number of off-screen rows kept mounted on each side of the viewport.
    * Defaults to 10. Higher values smooth fast scrolling at the cost of

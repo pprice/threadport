@@ -9,12 +9,29 @@ import {
   type WheelEvent,
 } from 'react'
 import { initialRootState, RootContext } from './internal/rootContext'
+import { createViewportStore } from './internal/viewportStore'
 import type {
   OverlayProps,
   RootProps,
   RootRegistration,
   RootState,
 } from './types'
+
+const INITIAL_VIEWPORT_STATE = {
+  distanceFromHead: 0,
+  distanceFromTail: 0,
+  isAtHead: true,
+  isAtTail: false,
+  isReady: false,
+  isScrolling: false,
+  scrollbarInlineSize: 0,
+  scrollOffset: 0,
+  scrollSize: 0,
+  viewportSize: 0,
+  scrollDirection: null,
+  totalItems: 0,
+  virtualItems: 0,
+} as const
 
 type RootStyle = CSSProperties & {
   '--threadport-head-inset'?: string
@@ -141,6 +158,7 @@ export function useRootState() {
 export function Root({ children, className, style }: RootProps) {
   const registrationIdRef = useRef(0)
   const requestStateUpdateRef = useRef<(() => void) | null>(null)
+  const viewportStoreRef = useRef(createViewportStore(INITIAL_VIEWPORT_STATE))
   const [scrollElement, setScrollElement] = useState<HTMLElement | null>(null)
   const [state, setState] = useState<RootState>(initialRootState)
 
@@ -210,6 +228,7 @@ export function Root({ children, className, style }: RootProps) {
       requestViewportStateUpdate,
       scrollElement,
       state,
+      viewportStore: viewportStoreRef.current,
     }),
     [registerViewport, requestViewportStateUpdate, scrollElement, state],
   )

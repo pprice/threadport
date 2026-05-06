@@ -10,6 +10,7 @@ export function shallowEqualState(
     previous.distanceFromTail === next.distanceFromTail &&
     previous.isAtHead === next.isAtHead &&
     previous.isAtTail === next.isAtTail &&
+    previous.isReady === next.isReady &&
     previous.isScrolling === next.isScrolling &&
     previous.scrollbarInlineSize === next.scrollbarInlineSize &&
     previous.scrollOffset === next.scrollOffset &&

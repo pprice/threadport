@@ -110,11 +110,25 @@ and `itemGap` are shorthands that win over `virtualizerOptions.overscan` and
 
 Imperative handle:
 
-- `scrollToHead(options)`
-- `scrollToTail(options)`
-- `scrollToIndex(index, { align, animation })`
-- `scrollToItem(key, { align, animation })`
+- `scrollToHead(options) → Promise<ScrollResult>`
+- `scrollToTail(options) → Promise<ScrollResult>`
+- `scrollToIndex(index, { align, animation }) → Promise<ScrollResult>`
+- `scrollToItem(key, { align, animation, awaitMount }) → Promise<ScrollResult>`
 - `measure()`, `getState()`, `getScrollElement()`, `stopScrollAnimation()`
+
+`ScrollResult` resolves to `'completed'`, `'cancelled'` (user wheel/touch
+interrupted, or another scroll cancelled in flight), or `'rejected'`
+(target couldn't be resolved — out-of-range index, missing key, or
+`awaitMount` timed out).
+
+`scrollToItem({ awaitMount: true })` is the "scroll the just-submitted
+prompt to the head" pattern. Call it immediately after `setItems(append)`
+without manually waiting for paint — the library defers the scroll until
+the next frame after the new key appears in `items`. Times out at 1000ms.
+
+Animations honor `prefers-reduced-motion` automatically (clamping to
+instant scroll). Set `respectReducedMotion: false` on a `ScrollAnimation`
+only if you have a reason to override that — almost never the right call.
 
 Animation factories:
 
@@ -127,6 +141,34 @@ Frame helpers:
 - `Root`: shares inset and scrollbar geometry with overlays.
 - `Overlay`: frame-relative overlay; avoids the scrollbar lane by default and can forward wheel events to the viewport.
 - `useRootState`: read frame geometry in custom UI.
+
+State subscription helpers (call from descendants of a `<Root>`):
+
+- `useViewportSelector(selector, equalityFn?)`: subscribe to a slice of
+  `ViewportState`; only re-renders when the slice changes. Returns a
+  synthetic initial state until the Viewport's first emit lands, so the
+  hook is safe on first render.
+- `useViewportReady()`: one-shot `state.isReady` signal — `false` until
+  the first settled-state emission, then `true` for the lifetime of the
+  Viewport. Empty (`items.length === 0`) Viewports report `true`
+  immediately. Use to gate first-paint UI.
+- `useReducedMotion()`: subscribes to the OS-level
+  `prefers-reduced-motion` setting. Use for *host-level* motion
+  decisions (composer streaming pacing, message-enter animations) — the
+  Viewport's scroll animations already auto-respect PRM.
+
+Visibility tunables (on `Viewport`):
+
+- `visibilityOptions={{ thresholdPercent, dwellMs, debounceMs }}`:
+  - `thresholdPercent`: 0..1, fraction of an item's rect that must
+    overlap the viewport to count as visible. Default 0 (any pixel
+    counts).
+  - `dwellMs`: delay before a newly-overlapping item is included in the
+    next `entered` array. Filters scroll-flyby noise for read receipts.
+    Exits still fire immediately. Default 0.
+  - `debounceMs`: trailing-debounce the entire visibility computation.
+    Default 0. The whole computation is skipped when no
+    `onVisibilityChange` handler is registered, regardless of options.
 
 ## Layout
 

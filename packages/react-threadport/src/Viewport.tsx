@@ -5,6 +5,7 @@ import {
   type ReactElement,
   type RefAttributes,
   useCallback,
+  useContext,
   useEffect,
   useImperativeHandle,
   useLayoutEffect,
@@ -18,13 +19,14 @@ import {
   DEFAULT_ESTIMATE,
 } from './internal/constants'
 import { computeItemKeyTransition } from './internal/itemKeyTransitions'
-import { useRootRegistration } from './internal/rootContext'
+import { RootContext, useRootRegistration } from './internal/rootContext'
 import { afterTwoFrames, nextFrame } from './internal/scheduleFrame'
 import {
   type ActiveScrollAnimation,
   animateScrollTop,
   resolveScrollAnimation,
 } from './internal/scrollAnimation'
+import { scrollAsPromise } from './internal/scrollPromise'
 import { isTailReserveEnabled } from './internal/TailReserve'
 import {
   resolveMaxScrollTop,
@@ -32,21 +34,24 @@ import {
   resolveUnconsumedTailReserve,
 } from './internal/tailReserveCalculation'
 import { useAnchorManager } from './internal/useAnchorManager'
+import { useAwaitMountQueue } from './internal/useAwaitMountQueue'
 import { useLatest } from './internal/useLatest'
 import { useScrollbarInlineSize } from './internal/useScrollbarInlineSize'
 import { useTailReserveContentMeasurement } from './internal/useTailReserveContentMeasurement'
 import { useViewportStateEmitter } from './internal/useViewportStateEmitter'
+import { useVisibilityTracker } from './internal/useVisibilityTracker'
 import { VirtualRows } from './internal/VirtualRows'
+import { createViewportStore } from './internal/viewportStore'
 import type {
   ItemKey,
   ScrollAlign,
   ScrollAnimation,
   ScrollDirection,
+  ScrollResult,
   ScrollToItemOptions,
   ViewportHandle,
   ViewportProps,
   ViewportState,
-  VisibilityChange,
 } from './types'
 
 function toVirtualAlign(align: ScrollAlign) {
@@ -88,6 +93,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     tailReserve,
     scrollAnimation,
     virtualizerOptions,
+    visibilityOptions,
   }: ViewportProps<TItem>,
   forwardedRef: ForwardedRef<ViewportHandle>,
 ) {
@@ -110,9 +116,28 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const [tailReserveContentElement, setTailReserveContentElement] =
     useState<HTMLDivElement | null>(null)
   const reservedTailKeyRef = useRef<ItemKey | null>(null)
-  const visibleKeysRef = useRef<ItemKey[]>([])
-  const onVisibilityChangeRef = useLatest(onVisibilityChange)
+  const isReadyRef = useRef(false)
+  const awaitMountQueue = useAwaitMountQueue()
+  const rootContext = useContext(RootContext)
   const registerViewportFrame = useRootRegistration()
+  const localStoreRef = useRef(
+    createViewportStore({
+      distanceFromHead: 0,
+      distanceFromTail: 0,
+      isAtHead: true,
+      isAtTail: false,
+      isReady: false,
+      isScrolling: false,
+      scrollbarInlineSize: 0,
+      scrollOffset: 0,
+      scrollSize: 0,
+      viewportSize: 0,
+      scrollDirection: null,
+      totalItems: 0,
+      virtualItems: 0,
+    }),
+  )
+  const viewportStore = rootContext?.viewportStore ?? localStoreRef.current
 
   const tailReserveEnabled = isTailReserveEnabled(tailReserve)
   const tailReserveOptions =
@@ -188,6 +213,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       distanceFromTail,
       isAtHead: scrollOffset <= atHeadThreshold,
       isAtTail: distanceFromTail <= atTailThreshold,
+      isReady: isReadyRef.current,
       isScrolling: virtualizer.isScrolling,
       scrollbarInlineSize: scrollbarInlineSizeRef.current,
       scrollOffset,
@@ -199,8 +225,33 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     }
   }
 
+  const pushStoreSnapshot = useCallback(() => {
+    viewportStore.emit(readState())
+  }, [readState, viewportStore])
+
+  const onStateChangeWithStore = useCallback(
+    (state: ViewportState) => {
+      viewportStore.emit(state)
+      onStateChange?.(state)
+    },
+    [onStateChange, viewportStore],
+  )
+
   const { emitState, scheduleSettledStateEmit, scheduleStateEmit } =
-    useViewportStateEmitter({ onStateChange, readState })
+    useViewportStateEmitter({
+      onStateChange: onStateChangeWithStore,
+      readState,
+    })
+
+  const markReady = useCallback(() => {
+    if (isReadyRef.current) {
+      return
+    }
+
+    isReadyRef.current = true
+    pushStoreSnapshot()
+    emitState()
+  }, [emitState, pushStoreSnapshot])
 
   const requestStateUpdate = useCallback(() => {
     emitState()
@@ -210,12 +261,12 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   function scrollToTarget(
     getTargetTop: () => number,
     options: ScrollAnimation | undefined,
-    onSettled?: () => void,
-  ) {
+    onSettled?: (result: ScrollResult) => void,
+  ): boolean {
     const element = scrollRef.current
 
     if (!element) {
-      return
+      return false
     }
 
     stopScrollAnimation()
@@ -228,10 +279,11 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       element,
       getTargetTop,
       resolveScrollAnimation(options, scrollAnimation),
-      () => {
+      (result) => {
         done = true
 
         if (scrollAnimationIdRef.current !== animationId) {
+          onSettled?.('cancelled')
           return
         }
 
@@ -239,41 +291,76 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
         animationRef.current = null
         captureAnchor()
         scheduleStateEmit()
-        onSettled?.()
+        onSettled?.(result)
       },
     )
 
     if (!done) {
       animationRef.current = activeAnimation
     }
+
+    return true
   }
 
   function scrollToIndex(
     index: number,
     { align = 'head', animation }: ScrollToItemOptions = {},
-  ) {
+  ): Promise<ScrollResult> {
     if (index < 0 || index >= items.length) {
-      return
+      return Promise.resolve<ScrollResult>('rejected')
     }
 
-    scrollToTarget(
-      () =>
-        virtualizer.getOffsetForIndex(index, toVirtualAlign(align))?.[0] ??
-        scrollRef.current?.scrollTop ??
-        0,
-      animation,
+    return scrollAsPromise((onSettled) =>
+      scrollToTarget(
+        () =>
+          virtualizer.getOffsetForIndex(index, toVirtualAlign(align))?.[0] ??
+          scrollRef.current?.scrollTop ??
+          0,
+        animation,
+        onSettled,
+      ),
     )
   }
 
-  function scrollToItem(key: ItemKey, options: ScrollToItemOptions = {}) {
+  function scrollToItem(
+    key: ItemKey,
+    options: ScrollToItemOptions = {},
+  ): Promise<ScrollResult> {
+    const { awaitMount = false, ...scrollOptions } = options
     const index = keyToIndex.get(key)
 
-    if (index === undefined) {
-      return
+    if (index !== undefined) {
+      return scrollToIndex(index, scrollOptions)
     }
 
-    scrollToIndex(index, options)
+    if (!awaitMount) {
+      return Promise.resolve<ScrollResult>('rejected')
+    }
+
+    return new Promise<ScrollResult>((resolve) => {
+      // Defer until the next frame after the items-change effect flushes,
+      // so the virtualizer has positioned and sized the new row before we
+      // measure its offset. Look up via refs so we use the *current*
+      // keyToIndex / scrollToIndex closures, not the ones captured when
+      // scrollToItem was originally called.
+      const run = () =>
+        nextFrame(() => {
+          const nextIndex = keyToIndexRef.current.get(key)
+
+          if (nextIndex === undefined) {
+            resolve('rejected')
+            return
+          }
+
+          scrollToIndexRef.current(nextIndex, scrollOptions).then(resolve)
+        })
+
+      awaitMountQueue.enqueue(key, run, resolve)
+    })
   }
+
+  const keyToIndexRef = useLatest(keyToIndex)
+  const scrollToIndexRef = useLatest(scrollToIndex)
 
   const virtualizer = useVirtualizer<HTMLDivElement, HTMLDivElement>({
     ...virtualizerOptions,
@@ -407,6 +494,8 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
       restoreIfPrepended()
     }
 
+    awaitMountQueue.flush(keyToIndex)
+
     if (!tailReserveEnabled || lastKey === null) {
       setReservedTailKey((current) => (current === null ? current : null))
     } else if (appendedToTail) {
@@ -470,6 +559,19 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     }
   }, [])
 
+  useEffect(() => {
+    if (isReadyRef.current) {
+      return
+    }
+
+    if (items.length === 0) {
+      markReady()
+      return
+    }
+
+    return afterTwoFrames(markReady)
+  }, [items.length, markReady])
+
   function getScrollElement() {
     return scrollRef.current
   }
@@ -478,29 +580,42 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     virtualizer.measure()
   }
 
-  function scrollToHead(options?: ScrollAnimation) {
-    scrollToTarget(() => 0, options)
+  function scrollToHead(options?: ScrollAnimation): Promise<ScrollResult> {
+    return scrollAsPromise((onSettled) =>
+      scrollToTarget(() => 0, options, onSettled),
+    )
   }
 
-  function scrollToTail(options?: ScrollAnimation) {
-    scrollToTarget(getMaxScrollTop, options, () => {
-      nextFrame(() => {
-        const element = scrollRef.current
-
-        if (!element) {
+  function scrollToTail(options?: ScrollAnimation): Promise<ScrollResult> {
+    return scrollAsPromise((onSettled) =>
+      scrollToTarget(getMaxScrollTop, options, (result) => {
+        if (result !== 'completed') {
+          onSettled(result)
           return
         }
 
-        const targetTop = getMaxScrollTop()
+        // After landing, take one more frame to absorb any tail-reserve
+        // size deltas that arrived between the final scroll write and now.
+        nextFrame(() => {
+          const element = scrollRef.current
 
-        if (Math.abs(element.scrollTop - targetTop) > 1) {
-          element.scrollTop = targetTop
-        }
+          if (!element) {
+            onSettled(result)
+            return
+          }
 
-        captureAnchor()
-        emitState()
-      })
-    })
+          const targetTop = getMaxScrollTop()
+
+          if (Math.abs(element.scrollTop - targetTop) > 1) {
+            element.scrollTop = targetTop
+          }
+
+          captureAnchor()
+          emitState()
+          onSettled(result)
+        })
+      }),
+    )
   }
 
   useImperativeHandle(forwardedRef, () => ({
@@ -568,57 +683,14 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     virtualItems.length,
   ])
 
-  useEffect(() => {
-    const callback = onVisibilityChangeRef.current
-
-    if (!callback) {
-      return
-    }
-
-    const element = scrollRef.current
-
-    if (!element) {
-      return
-    }
-
-    const viewTop = element.scrollTop
-    const viewBottom = viewTop + element.clientHeight
-    const nextKeys: ItemKey[] = []
-
-    for (const virtualItem of virtualItems) {
-      if (virtualItem.end <= viewTop || virtualItem.start >= viewBottom) {
-        continue
-      }
-
-      const item = items[virtualItem.index]
-
-      if (item === undefined) {
-        continue
-      }
-
-      nextKeys.push(getItemKey(item, virtualItem.index))
-    }
-
-    const previousKeys = visibleKeysRef.current
-
-    if (
-      nextKeys.length === previousKeys.length &&
-      nextKeys.every((key, index) => key === previousKeys[index])
-    ) {
-      return
-    }
-
-    const previousSet = new Set(previousKeys)
-    const nextSet = new Set(nextKeys)
-    const change: VisibilityChange = {
-      entered: nextKeys.filter((key) => !previousSet.has(key)),
-      exited: previousKeys.filter((key) => !nextSet.has(key)),
-      visible: nextKeys,
-    }
-
-    visibleKeysRef.current = nextKeys
-    callback(change)
-  }, [getItemKey, items, virtualItems])
+  useVisibilityTracker({
+    getItemKey,
+    items,
+    onVisibilityChange,
+    scrollRef,
+    virtualItems,
+    visibilityOptions,
+  })
 
   const {
     lastKey: renderLastKey,

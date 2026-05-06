@@ -1,4 +1,5 @@
 import { easeOutQuartCurve, type ScrollAnimation } from '../easing'
+import type { ScrollResult } from '../types'
 import { DEFAULT_SCROLL_DURATION } from './constants'
 
 export type ActiveScrollAnimation = {
@@ -17,26 +18,36 @@ function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
+type ResolvedScrollAnimation = {
+  duration: number
+  easing: (t: number) => number
+  respectReducedMotion: boolean
+}
+
 export function resolveScrollAnimation(
   animation?: ScrollAnimation,
   defaultAnimation?: ScrollAnimation,
-): Required<ScrollAnimation> {
+): ResolvedScrollAnimation {
   return {
     duration:
       animation?.duration ??
       defaultAnimation?.duration ??
       DEFAULT_SCROLL_DURATION,
     easing: animation?.easing ?? defaultAnimation?.easing ?? easeOutQuartCurve,
+    respectReducedMotion:
+      animation?.respectReducedMotion ??
+      defaultAnimation?.respectReducedMotion ??
+      true,
   }
 }
 
 export function animateScrollTop(
   element: HTMLElement,
   getTargetTop: () => number,
-  animation: Required<ScrollAnimation>,
-  onDone: () => void,
+  animation: ResolvedScrollAnimation,
+  onDone: (result: ScrollResult) => void,
 ): ActiveScrollAnimation {
-  const { duration, easing } = animation
+  const { duration, easing, respectReducedMotion } = animation
   const startTop = element.scrollTop
 
   function readTargetTop() {
@@ -46,14 +57,14 @@ export function animateScrollTop(
   }
 
   const initialTarget = readTargetTop()
-
-  if (
+  const isInstant =
     duration <= 0 ||
     Math.abs(initialTarget - startTop) < 1 ||
-    prefersReducedMotion()
-  ) {
+    (respectReducedMotion && prefersReducedMotion())
+
+  if (isInstant) {
     element.scrollTop = initialTarget
-    onDone()
+    onDone('completed')
 
     return { cancel: () => undefined }
   }
@@ -75,7 +86,7 @@ export function animateScrollTop(
     })
   }
 
-  function finish() {
+  function finish(result: ScrollResult) {
     if (finished) {
       return
     }
@@ -83,7 +94,7 @@ export function animateScrollTop(
     finished = true
     cancelAnimationFrame(animationFrame)
     cleanup()
-    onDone()
+    onDone(result)
   }
 
   function cancel() {
@@ -92,7 +103,7 @@ export function animateScrollTop(
     }
 
     cancelled = true
-    finish()
+    finish('cancelled')
   }
 
   function frame(now: number) {
@@ -110,7 +121,7 @@ export function animateScrollTop(
     }
 
     element.scrollTop = readTargetTop()
-    finish()
+    finish('completed')
   }
 
   cancelEvents.forEach((eventName) => {

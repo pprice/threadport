@@ -17,6 +17,7 @@ export type {
   ScrollAnimation,
   ScrollDirection,
   ScrollEasing,
+  ScrollResult,
   ScrollToItemOptions,
   TailReserveConfig,
   TailReserveMetrics,
@@ -25,5 +26,10 @@ export type {
   ViewportProps,
   ViewportState,
   VirtualizerOptions,
+  VisibilityChange,
+  VisibilityOptions,
 } from './types'
+export { useReducedMotion } from './useReducedMotion'
+export { useViewportReady } from './useViewportReady'
+export { useViewportSelector } from './useViewportSelector'
 export { Viewport } from './Viewport'

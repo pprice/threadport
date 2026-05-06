@@ -12,15 +12,24 @@ export type ScrollEasing = (t: number) => number
 /**
  * Animation timing for an imperative scroll command.
  *
- * Pass `{ duration: 0 }` to skip animation entirely (useful for tests and
- * `prefers-reduced-motion` paths). Use {@link Animation} factories for
- * convenient curve + duration pairs.
+ * Pass `{ duration: 0 }` to skip animation entirely (useful for tests). The
+ * library auto-respects `prefers-reduced-motion` and clamps to instant
+ * scroll under it; pass `respectReducedMotion: false` only when you have a
+ * concrete reason to override that (e.g. an in-app preference toggle that
+ * already gates motion at a higher level). Use {@link Animation} factories
+ * for convenient curve + duration pairs.
  */
 export type ScrollAnimation = {
   /** Duration in milliseconds. Defaults to 460. */
   duration?: number
   /** Easing curve. Defaults to ease-out-quart. */
   easing?: ScrollEasing
+  /**
+   * Honor the user's `prefers-reduced-motion` setting by clamping to instant
+   * scroll. Defaults to `true`. Set `false` only when the host is gating
+   * motion at a higher level — almost never the right answer.
+   */
+  respectReducedMotion?: boolean
 }
 
 const DEFAULT_ANIMATION_DURATION = 460
