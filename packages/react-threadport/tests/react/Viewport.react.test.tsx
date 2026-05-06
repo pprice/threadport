@@ -246,6 +246,50 @@ describe('Viewport React rendering', () => {
     )
   })
 
+  it('fires onVisibilityChange with entered, exited, and the current visible set', async () => {
+    const onVisibilityChange = vi.fn()
+    const proto = HTMLDivElement.prototype
+    const original = Object.getOwnPropertyDescriptor(proto, 'clientHeight')
+
+    Object.defineProperty(proto, 'clientHeight', {
+      configurable: true,
+      get(this: HTMLDivElement) {
+        const declared = this.style.height
+        return declared?.endsWith('px') ? Number.parseInt(declared, 10) : 0
+      },
+    })
+
+    try {
+      render(
+        <ThreadPort.Viewport
+          ariaLabel="Visibility transcript"
+          estimateSize={estimateSize}
+          getItemKey={getItemKey}
+          initialAnchor="head"
+          items={baseItems}
+          onVisibilityChange={onVisibilityChange}
+          renderItem={renderItem}
+          style={{ height: 260 }}
+          virtualizerOptions={virtualizerOptions()}
+        />,
+      )
+
+      await waitFor(() => expect(onVisibilityChange).toHaveBeenCalled())
+
+      expect(onVisibilityChange).toHaveBeenLastCalledWith({
+        entered: ['alpha', 'bravo', 'charlie'],
+        exited: [],
+        visible: ['alpha', 'bravo', 'charlie'],
+      })
+    } finally {
+      if (original) {
+        Object.defineProperty(proto, 'clientHeight', original)
+      } else {
+        Reflect.deleteProperty(proto, 'clientHeight')
+      }
+    }
+  })
+
   it('forwards scrollElementProps onto the scroll element', () => {
     render(
       <ThreadPort.Viewport

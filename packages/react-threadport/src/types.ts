@@ -210,6 +210,29 @@ export type ScrollElementProps = Omit<
 }
 
 /**
+ * Payload for {@link ViewportProps.onVisibilityChange}.
+ *
+ * The Viewport tracks which item keys overlap the scroll element's visible
+ * rect (any pixel of overlap counts; partial-coverage thresholds are not
+ * modeled). It compares each render's set against the previous fire and
+ * invokes the callback only when the set changes — never on pure scroll
+ * within a stable visible window.
+ *
+ * Use `entered` for one-shot side effects (mark-as-read, prefetch on first
+ * appearance), `exited` for cleanup (release embeds, pause autoplaying
+ * media), and `visible` when you need the current full set without
+ * maintaining it yourself.
+ */
+export type VisibilityChange = {
+  /** Keys that became visible since the previous fire. */
+  entered: ItemKey[]
+  /** Keys that left the visible region since the previous fire. */
+  exited: ItemKey[]
+  /** Current full visible set, in DOM order. */
+  visible: ItemKey[]
+}
+
+/**
  * Geometry passed into a {@link TailReserveOptions.minHeight} callback. The
  * default minimum is computed from these values; override `minHeight` with a
  * function to derive a custom reserve (e.g. half-screen on mobile, full
@@ -454,6 +477,24 @@ export type ViewportProps<TItem> = {
    * Safe to use directly without memoization.
    */
   onStateChange?: (state: ViewportState) => void
+  /**
+   * Called when the set of items overlapping the visible viewport rect
+   * changes. Receives a {@link VisibilityChange} with `entered`, `exited`,
+   * and the current `visible` set. Fires only on set changes — never on
+   * pure scroll within a stable visible window — so it's safe to use
+   * directly without throttling.
+   *
+   * @example
+   * // mark-as-read
+   * onVisibilityChange={({ entered }) => {
+   *   setReadKeys((prev) => {
+   *     const next = new Set(prev)
+   *     for (const key of entered) next.add(key)
+   *     return next
+   *   })
+   * }}
+   */
+  onVisibilityChange?: (change: VisibilityChange) => void
   /**
    * Number of off-screen rows kept mounted on each side of the viewport.
    * Defaults to 10. Higher values smooth fast scrolling at the cost of

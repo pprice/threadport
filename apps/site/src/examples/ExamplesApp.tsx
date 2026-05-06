@@ -14,6 +14,7 @@ import LongResponseExample from './pages/long-response'
 import MobileExample from './pages/mobile'
 import PrependExample from './pages/prepend'
 import VariableHeightExample from './pages/variable-height'
+import VisibilityExample from './pages/visibility'
 
 const ROUTE_COMPONENTS: Record<string, () => ReactElement> = {
   basic: BasicExample,
@@ -26,6 +27,7 @@ const ROUTE_COMPONENTS: Record<string, () => ReactElement> = {
   mobile: MobileExample,
   prepend: PrependExample,
   'variable-height': VariableHeightExample,
+  visibility: VisibilityExample,
 }
 
 function GithubIcon() {

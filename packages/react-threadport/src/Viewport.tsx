@@ -46,6 +46,7 @@ import type {
   ViewportHandle,
   ViewportProps,
   ViewportState,
+  VisibilityChange,
 } from './types'
 
 function toVirtualAlign(align: ScrollAlign) {
@@ -77,6 +78,7 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     itemClassName,
     itemGap,
     onStateChange,
+    onVisibilityChange,
     overscan,
     preserveScrollOnPrepend = true,
     role,
@@ -108,6 +110,8 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
   const [tailReserveContentElement, setTailReserveContentElement] =
     useState<HTMLDivElement | null>(null)
   const reservedTailKeyRef = useRef<ItemKey | null>(null)
+  const visibleKeysRef = useRef<ItemKey[]>([])
+  const onVisibilityChangeRef = useLatest(onVisibilityChange)
   const registerViewportFrame = useRootRegistration()
 
   const tailReserveEnabled = isTailReserveEnabled(tailReserve)
@@ -563,6 +567,58 @@ const ViewportBase = forwardRef(function ViewportInner<TItem>(
     totalSize,
     virtualItems.length,
   ])
+
+  useEffect(() => {
+    const callback = onVisibilityChangeRef.current
+
+    if (!callback) {
+      return
+    }
+
+    const element = scrollRef.current
+
+    if (!element) {
+      return
+    }
+
+    const viewTop = element.scrollTop
+    const viewBottom = viewTop + element.clientHeight
+    const nextKeys: ItemKey[] = []
+
+    for (const virtualItem of virtualItems) {
+      if (virtualItem.end <= viewTop || virtualItem.start >= viewBottom) {
+        continue
+      }
+
+      const item = items[virtualItem.index]
+
+      if (item === undefined) {
+        continue
+      }
+
+      nextKeys.push(getItemKey(item, virtualItem.index))
+    }
+
+    const previousKeys = visibleKeysRef.current
+
+    if (
+      nextKeys.length === previousKeys.length &&
+      nextKeys.every((key, index) => key === previousKeys[index])
+    ) {
+      return
+    }
+
+    const previousSet = new Set(previousKeys)
+    const nextSet = new Set(nextKeys)
+    const change: VisibilityChange = {
+      entered: nextKeys.filter((key) => !previousSet.has(key)),
+      exited: previousKeys.filter((key) => !nextSet.has(key)),
+      visible: nextKeys,
+    }
+
+    visibleKeysRef.current = nextKeys
+    callback(change)
+  }, [getItemKey, items, virtualItems])
 
   const {
     lastKey: renderLastKey,

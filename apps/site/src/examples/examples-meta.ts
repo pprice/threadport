@@ -134,6 +134,22 @@ export const examples: ExampleMeta[] = [
     sourcePath: 'apps/site/src/examples/pages/data-loading.tsx',
   },
   {
+    id: 'visibility',
+    label: 'Visibility',
+    description: 'Mark items as read as they scroll into view.',
+    href: '/examples/visibility',
+    integration: [
+      'onVisibilityChange',
+      'entered',
+      'exited',
+      'visible',
+      'Overlay head',
+    ],
+    ownedBy: 'host',
+    scope: 'Policy',
+    sourcePath: 'apps/site/src/examples/pages/visibility.tsx',
+  },
+  {
     id: 'fullscreen',
     label: 'Fullscreen',
     description:
