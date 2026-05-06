@@ -1,5 +1,5 @@
 import { Eye, EyeOff } from 'lucide-react'
-import { memo, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import {
   createTranscript,
   type DemoMessage,
@@ -30,6 +30,25 @@ export default function VisibilityExample() {
   const viewportSettled = useInitialViewportSettled(state)
 
   const unread = messages.length - readKeys.size
+  const isAtTail = state?.isAtTail ?? false
+
+  useEffect(() => {
+    if (!isAtTail) {
+      return
+    }
+
+    setReadKeys((current) => {
+      if (current.size === messages.length) {
+        return current
+      }
+
+      const next = new Set(current)
+      for (const message of messages) {
+        next.add(getMessageKey(message))
+      }
+      return next
+    })
+  }, [isAtTail, messages])
 
   function reset() {
     setReadKeys(new Set())
@@ -46,7 +65,7 @@ export default function VisibilityExample() {
       notes={[
         'visibilityOptions tighten the signal: an item must be 50% visible for 500ms before it counts as entered.',
         'The unread badge is a sibling component that reads isAtHead via useViewportSelector and only re-renders when that slice changes.',
-        'visible carries the current full set in DOM order; exits still fire immediately when an item drops below the threshold.',
+        'Reaching the tail (scroll, End, jump) is host policy here — the page marks everything read so a fast jump past unread rows still resolves to "caught up".',
       ]}
       aside={
         <>
