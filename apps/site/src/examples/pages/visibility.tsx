@@ -118,7 +118,7 @@ function VisibilityCounter({ unread }: { unread: number }) {
     <div aria-live="polite" className="visibilityCounter" data-state="unread">
       <EyeOff aria-hidden="true" size={14} />
       <span>
-        {unread} unread{isAtHead ? '' : ' above'}
+        {unread} unread{isAtHead ? '' : ' below'}
       </span>
     </div>
   )
